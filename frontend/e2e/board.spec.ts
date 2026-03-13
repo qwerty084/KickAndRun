@@ -6,12 +6,12 @@ test.describe('Game Board', () => {
   })
 
   test('renders the game board', async ({ page }) => {
-    await expect(page.locator('.grid')).toBeVisible()
+    await expect(page.locator('.grid.grid-cols-3')).toBeVisible()
   })
 
   test('renders 4 player bases', async ({ page }) => {
     // Each base has a "B" label
-    const bases = page.locator('text=B')
+    const bases = page.locator('.grid.h-fit > .flex.font-bold')
     await expect(bases).toHaveCount(4)
   })
 
