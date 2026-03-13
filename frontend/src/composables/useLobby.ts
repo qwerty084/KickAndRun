@@ -8,6 +8,7 @@ export interface Lobby {
   status: string;
   hostPlayer: { id: string; name: string };
   players: { id: string; name: string }[];
+  gameSessionId?: string;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";

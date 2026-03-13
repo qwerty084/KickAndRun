@@ -41,6 +41,9 @@ class Lobby
     #[ORM\Column(length: 20)]
     private string $status = self::STATUS_WAITING;
 
+    #[ORM\OneToOne(mappedBy: 'lobby', targetEntity: GameSession::class)]
+    private ?GameSession $gameSession = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -110,6 +113,11 @@ class Lobby
     public function getStatus(): string
     {
         return $this->status;
+    }
+
+    public function getGameSession(): ?GameSession
+    {
+        return $this->gameSession;
     }
 
     public function setStatus(string $status): static

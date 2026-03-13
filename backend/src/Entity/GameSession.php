@@ -19,7 +19,7 @@ class GameSession
     #[ORM\Column(type: 'uuid')]
     private Uuid $id;
 
-    #[ORM\OneToOne(targetEntity: Lobby::class)]
+    #[ORM\OneToOne(targetEntity: Lobby::class, inversedBy: 'gameSession')]
     #[ORM\JoinColumn(nullable: false)]
     private Lobby $lobby;
 

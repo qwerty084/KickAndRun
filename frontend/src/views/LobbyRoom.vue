@@ -21,11 +21,13 @@ interface LobbyData {
   players: { id: string; name: string }[];
   maxPlayers: number;
   status: string;
+  gameSessionId?: string;
 }
 
 const lobby = ref<LobbyData | null>(null);
 const error = ref<string | null>(null);
 const starting = ref(false);
+let eventSource: EventSource | null = null;
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
@@ -34,31 +36,88 @@ const myPlayerIndex = computed(() => {
   return lobby.value.players.findIndex((p) => p.id === myPlayerId);
 });
 
-let pollTimer: ReturnType<typeof setInterval> | null = null;
-
 async function fetchLobby() {
   try {
     const res = await fetch(`${API_BASE}/lobbies/${lobbyId}`);
     if (!res.ok) throw new Error("Lobby not found");
     lobby.value = await res.json();
 
-    // If game already started, redirect
     if (lobby.value?.status === "in_game") {
-      await findAndJoinGame();
+      await redirectToGame();
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to load lobby";
   }
 }
 
-async function findAndJoinGame() {
-  // Lobby is in_game — we need the game session ID
-  // For now, we'll need to know the gameSessionId. Let's try starting (which returns it if already started)
-  // or we check if the start response already gave us the ID
-  // Actually the start endpoint returns the gameSessionId. We can also add a lobby endpoint.
-  // For simplicity, let's try to start — if it fails with conflict, we need another approach.
-  // TODO: Add GET /api/lobbies/:id/game endpoint on backend
-  error.value = "Game has started! Refreshing...";
+async function redirectToGame() {
+  // Try to get gameSessionId from lobby data first
+  if (lobby.value?.gameSessionId) {
+    navigateToGame(lobby.value.gameSessionId);
+    return;
+  }
+
+  // Fallback: fetch from /game endpoint
+  try {
+    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/game`);
+    if (!res.ok) throw new Error("Could not find game session");
+    const data = await res.json();
+    navigateToGame(data.gameSessionId);
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : "Failed to find game session";
+  }
+}
+
+function navigateToGame(gameSessionId: string) {
+  router.push({
+    name: "game",
+    params: { id: gameSessionId },
+    query: {
+      playerId: myPlayerId,
+      playerName: myPlayerName,
+      playerIndex: String(myPlayerIndex.value),
+    },
+  });
+}
+
+function subscribeMercure() {
+  const mercureUrl = new URL("/.well-known/mercure", window.location.origin);
+  mercureUrl.searchParams.set("topic", `lobby/${lobbyId}`);
+
+  eventSource = new EventSource(mercureUrl.toString());
+
+  eventSource.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data);
+      const eventType: string = payload.event;
+
+      if (payload.lobby) {
+        lobby.value = payload.lobby;
+      }
+
+      if (eventType === "game_started") {
+        const gameSessionId = payload.gameSessionId ?? payload.lobby?.gameSessionId;
+        if (gameSessionId) {
+          navigateToGame(gameSessionId);
+        } else {
+          redirectToGame();
+        }
+      }
+    } catch {
+      // Ignore malformed events
+    }
+  };
+
+  eventSource.onerror = () => {
+    // EventSource auto-reconnects; no action needed
+  };
+}
+
+function unsubscribeMercure() {
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
 }
 
 async function handleStart() {
@@ -67,15 +126,7 @@ async function handleStart() {
   try {
     const result = await startGame(lobbyId);
     if (result) {
-      router.push({
-        name: "game",
-        params: { id: result.gameSessionId },
-        query: {
-          playerId: myPlayerId,
-          playerName: myPlayerName,
-          playerIndex: String(myPlayerIndex.value),
-        },
-      });
+      navigateToGame(result.gameSessionId);
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to start game";
@@ -86,11 +137,11 @@ async function handleStart() {
 
 onMounted(() => {
   fetchLobby();
-  pollTimer = setInterval(fetchLobby, 3000);
+  subscribeMercure();
 });
 
 onUnmounted(() => {
-  if (pollTimer) clearInterval(pollTimer);
+  unsubscribeMercure();
 });
 
 const playerColors = ["green", "yellow", "red", "black"] as const;

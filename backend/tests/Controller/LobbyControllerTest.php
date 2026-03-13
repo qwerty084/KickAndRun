@@ -148,5 +148,83 @@ class LobbyControllerTest extends WebTestCase
         self::assertArrayHasKey('gameSessionId', $data);
         self::assertSame('in_game', $data['lobby']['status']);
         self::assertArrayHasKey('gameState', $data);
+
+        // Verify lobby serialization includes gameSessionId
+        self::assertArrayHasKey('gameSessionId', $data['lobby']);
+        self::assertSame($data['gameSessionId'], $data['lobby']['gameSessionId']);
+    }
+
+    public function testGetLobbyGame(): void
+    {
+        $client = static::createClient();
+
+        // Create lobby + join + start
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'Get Game Lobby', 'hostName' => 'Alice']));
+        $created = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('POST', '/api/lobbies/' . $created['id'] . '/join', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+
+        $client->request('POST', '/api/lobbies/' . $created['id'] . '/start');
+        $startData = json_decode($client->getResponse()->getContent(), true);
+
+        // GET /api/lobbies/{id}/game
+        $client->request('GET', '/api/lobbies/' . $created['id'] . '/game');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('gameSessionId', $data);
+        self::assertSame($startData['gameSessionId'], $data['gameSessionId']);
+        self::assertArrayHasKey('gameState', $data);
+    }
+
+    public function testGetLobbyGameNotStarted(): void
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'Waiting Lobby', 'hostName' => 'Alice']));
+        $created = json_decode($client->getResponse()->getContent(), true);
+
+        $client->request('GET', '/api/lobbies/' . $created['id'] . '/game');
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    public function testGetLobbyGameNotFound(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/lobbies/00000000-0000-0000-0000-000000000000/game');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testShowLobbyIncludesGameSessionIdAfterStart(): void
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'SessionId Lobby', 'hostName' => 'Alice']));
+        $created = json_decode($client->getResponse()->getContent(), true);
+
+        // Before start: no gameSessionId
+        self::assertArrayNotHasKey('gameSessionId', $created);
+
+        $client->request('POST', '/api/lobbies/' . $created['id'] . '/join', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+
+        $client->request('POST', '/api/lobbies/' . $created['id'] . '/start');
+
+        // After start: GET lobby should include gameSessionId
+        $client->request('GET', '/api/lobbies/' . $created['id']);
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('gameSessionId', $data);
+        self::assertNotEmpty($data['gameSessionId']);
     }
 }

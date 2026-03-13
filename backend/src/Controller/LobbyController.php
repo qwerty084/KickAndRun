@@ -163,6 +163,31 @@ class LobbyController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    #[Route('/lobbies/{id}/game', name: 'lobby_game', methods: ['GET'])]
+    public function game(string $id): JsonResponse
+    {
+        $lobby = $this->lobbyRepository->find($id);
+
+        if (!$lobby) {
+            return $this->json(['error' => 'Lobby not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($lobby->getStatus() === Lobby::STATUS_WAITING) {
+            return $this->json(['error' => 'Game has not started yet.'], Response::HTTP_CONFLICT);
+        }
+
+        $gameSession = $lobby->getGameSession();
+
+        if (!$gameSession) {
+            return $this->json(['error' => 'Game session not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json([
+            'gameSessionId' => $gameSession->getId()->toRfc4122(),
+            'gameState' => $gameSession->getGameState(),
+        ]);
+    }
+
     #[Route('/lobbies/{id}/start', name: 'lobby_start_game', methods: ['POST'])]
     public function startGame(string $id): JsonResponse
     {
@@ -193,8 +218,11 @@ class LobbyController extends AbstractController
 
         $this->em->persist($gameSession);
         $this->em->flush();
+        $this->em->refresh($lobby);
 
-        $this->publishLobbyUpdate($lobby, 'game_started');
+        $this->publishLobbyUpdate($lobby, 'game_started', [
+            'gameSessionId' => $gameSession->getId()->toRfc4122(),
+        ]);
 
         return $this->json([
             'gameSessionId' => $gameSession->getId()->toRfc4122(),
@@ -203,14 +231,17 @@ class LobbyController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
-    private function publishLobbyUpdate(Lobby $lobby, string $event): void
+    /**
+     * @param array<string, mixed> $extra
+     */
+    private function publishLobbyUpdate(Lobby $lobby, string $event, array $extra = []): void
     {
         $this->hub->publish(new Update(
             'lobby/' . $lobby->getId()->toRfc4122(),
-            json_encode([
+            json_encode(array_merge([
                 'event' => $event,
                 'lobby' => $this->serializeLobby($lobby),
-            ], JSON_THROW_ON_ERROR),
+            ], $extra), JSON_THROW_ON_ERROR),
         ));
     }
 
@@ -219,7 +250,7 @@ class LobbyController extends AbstractController
      */
     private function serializeLobby(Lobby $lobby): array
     {
-        return [
+        $data = [
             'id' => $lobby->getId()->toRfc4122(),
             'code' => $lobby->getCode(),
             'name' => $lobby->getName(),
@@ -236,5 +267,12 @@ class LobbyController extends AbstractController
             'createdAt' => $lobby->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'updatedAt' => $lobby->getUpdatedAt()->format(\DateTimeInterface::ATOM),
         ];
+
+        $gameSession = $lobby->getGameSession();
+        if ($gameSession) {
+            $data['gameSessionId'] = $gameSession->getId()->toRfc4122();
+        }
+
+        return $data;
     }
 }
