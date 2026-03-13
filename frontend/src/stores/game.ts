@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import type { GameState, ValidMove, PlayerColor } from "@/types/Game";
 import { useGame } from "@/composables/useGame";
 import { useMercure, type ConnectionStatus } from "@/composables/useMercure";
+import { useSoundEffects } from "@/composables/useSoundEffects";
 
 export interface GameEvent {
   type: "dice_rolled" | "piece_moved" | "game_started" | "turn_passed" | "rematch_initiated";
@@ -36,6 +37,7 @@ export const useGameStore = defineStore("game", () => {
 
   const { getGame, rollDice: apiRoll, movePiece: apiMove } = useGame();
   const mercure = useMercure();
+  const { play: playSound } = useSoundEffects();
   const connectionStatus = computed<ConnectionStatus>(() => mercure.status.value);
 
   // Computed
@@ -198,6 +200,7 @@ export const useGameStore = defineStore("game", () => {
     const isBot = (data?.isBot as boolean) ?? isPlayerBot(playerColor);
 
     if (eventType === "dice_rolled" && playerColor) {
+      playSound("dice");
       addEvent({
         type: "dice_rolled",
         playerColor,
@@ -210,15 +213,30 @@ export const useGameStore = defineStore("game", () => {
 
     if (eventType === "piece_moved" && playerColor) {
       const moved = data?.moved as { pieceIndex: number; from: string; to: string } | undefined;
+      const kicked = (data?.kicked as boolean) ?? false;
+      const extraTurn = (data?.extraTurn as boolean) ?? false;
+      const eventWinner = (data?.winner as PlayerColor) ?? null;
+
+      // Play appropriate sound
+      if (eventWinner) {
+        playSound("win");
+      } else if (kicked) {
+        playSound("kick");
+      } else if (extraTurn) {
+        playSound("bonus");
+      } else {
+        playSound("move");
+      }
+
       addEvent({
         type: "piece_moved",
         playerColor,
         playerName,
         isBot,
         moved: moved ?? undefined,
-        kicked: (data?.kicked as boolean) ?? false,
-        extraTurn: (data?.extraTurn as boolean) ?? false,
-        winner: (data?.winner as PlayerColor) ?? null,
+        kicked,
+        extraTurn,
+        winner: eventWinner,
         timestamp: Date.now(),
       });
 
@@ -231,7 +249,7 @@ export const useGameStore = defineStore("game", () => {
       }
 
       // Track kicked piece for shake animation
-      if ((data?.kicked as boolean) && moved?.from) {
+      if (kicked && moved?.to) {
         // The kicked piece was at the destination before our piece moved there
         lastKickedPiece.value = { color: playerColor, position: moved.to };
         setTimeout(() => {
@@ -245,6 +263,11 @@ export const useGameStore = defineStore("game", () => {
       const gs = data.gameState as GameState;
       const nextPlayer = players.value[gs.currentPlayerIndex];
       botThinking.value = nextPlayer?.isBot === true && gs.phase !== "finished";
+
+      // Notify when it becomes my turn
+      if (gs.currentPlayerIndex === myPlayerIndex.value && gs.phase !== "finished") {
+        playSound("turn");
+      }
     }
 
     // Handle rematch event

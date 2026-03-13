@@ -6,6 +6,7 @@ import GameLog from "@/components/GameLog.vue";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import { useGameStore } from "@/stores/game";
 import { usePlayerSession } from "@/composables/usePlayerSession";
+import { useSoundEffects } from "@/composables/useSoundEffects";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { PlayerColor } from "@/types/Game";
 import type { GameEvent } from "@/stores/game";
@@ -15,6 +16,7 @@ const router = useRouter();
 const gameId = route.params.id as string;
 const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
+const { muted: soundMuted, toggleMute } = useSoundEffects();
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
@@ -189,6 +191,13 @@ onUnmounted(() => {
       </button>
       <span class="text-sm text-neutral-500 dark:text-neutral-400">Game {{ gameId.substring(0, 8) }}…</span>
       <ConnectionStatus :status="store.connectionStatus" class="ml-auto" />
+      <button
+        class="text-lg hover:opacity-70 transition-opacity"
+        :title="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
+        @click="toggleMute"
+      >
+        {{ soundMuted ? "🔇" : "🔊" }}
+      </button>
     </header>
 
     <!-- Loading -->
