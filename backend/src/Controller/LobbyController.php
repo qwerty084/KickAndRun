@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\GameSession;
 use App\Entity\Lobby;
 use App\Entity\Player;
+use App\Game\GameEngine;
+use App\Game\PlayerColor;
 use App\Repository\LobbyRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,6 +24,7 @@ class LobbyController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly LobbyRepository $lobbyRepository,
         private readonly HubInterface $hub,
+        private readonly GameEngine $engine,
     ) {
     }
 
@@ -173,10 +176,20 @@ class LobbyController extends AbstractController
             return $this->json(['error' => 'Game has already started or finished.'], Response::HTTP_CONFLICT);
         }
 
+        if ($lobby->getPlayers()->count() < 2) {
+            return $this->json(['error' => 'At least 2 players are required.'], Response::HTTP_BAD_REQUEST);
+        }
+
         $lobby->setStatus(Lobby::STATUS_IN_GAME);
+
+        // Assign colors based on join order
+        $playerCount = $lobby->getPlayers()->count();
+        $colors = array_slice(PlayerColor::inOrder(), 0, $playerCount);
+        $initialState = $this->engine->initializeGame($colors);
 
         $gameSession = new GameSession($lobby);
         $gameSession->setStatus(GameSession::STATUS_ACTIVE);
+        $gameSession->setGameState($initialState->toArray());
 
         $this->em->persist($gameSession);
         $this->em->flush();
@@ -186,27 +199,8 @@ class LobbyController extends AbstractController
         return $this->json([
             'gameSessionId' => $gameSession->getId()->toRfc4122(),
             'lobby' => $this->serializeLobby($lobby),
+            'gameState' => $initialState->toArray(),
         ], Response::HTTP_CREATED);
-    }
-
-    #[Route('/games/{id}', name: 'game_show', methods: ['GET'])]
-    public function showGame(string $id): JsonResponse
-    {
-        $gameSession = $this->em->getRepository(GameSession::class)->find($id);
-
-        if (!$gameSession) {
-            return $this->json(['error' => 'Game session not found.'], Response::HTTP_NOT_FOUND);
-        }
-
-        return $this->json([
-            'id' => $gameSession->getId()->toRfc4122(),
-            'status' => $gameSession->getStatus(),
-            'currentTurn' => $gameSession->getCurrentTurn(),
-            'gameState' => $gameSession->getGameState(),
-            'lobby' => $this->serializeLobby($gameSession->getLobby()),
-            'createdAt' => $gameSession->getCreatedAt()->format(\DateTimeInterface::ATOM),
-            'updatedAt' => $gameSession->getUpdatedAt()->format(\DateTimeInterface::ATOM),
-        ]);
     }
 
     private function publishLobbyUpdate(Lobby $lobby, string $event): void

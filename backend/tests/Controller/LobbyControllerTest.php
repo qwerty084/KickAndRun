@@ -136,11 +136,17 @@ class LobbyControllerTest extends WebTestCase
         ], json_encode(['name' => 'Game Lobby', 'hostName' => 'Alice']));
         $created = json_decode($client->getResponse()->getContent(), true);
 
+        // Must have at least 2 players
+        $client->request('POST', '/api/lobbies/' . $created['id'] . '/join', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+
         $client->request('POST', '/api/lobbies/' . $created['id'] . '/start');
         self::assertResponseStatusCodeSame(201);
 
         $data = json_decode($client->getResponse()->getContent(), true);
         self::assertArrayHasKey('gameSessionId', $data);
         self::assertSame('in_game', $data['lobby']['status']);
+        self::assertArrayHasKey('gameState', $data);
     }
 }
