@@ -22,6 +22,8 @@ withDefaults(defineProps<Props>(), {
 </template>
 
 <style>
+@reference "tailwindcss";
+
 .playingfield {
   border-radius: 50%;
   width: 1.4rem;
