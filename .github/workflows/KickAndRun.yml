@@ -18,7 +18,11 @@ jobs:
               run: npm ci
             - name: check code style
               run: npm run lint
+            - name: check formatting
+              run: npx prettier --check src/
             - name: run type checks
               run: npm run type-check
             - name: test build process
               run: npm run build
+            - name: check for known vulnerabilities
+              run: npm audit --audit-level=moderate
