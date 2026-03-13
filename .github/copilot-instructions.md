@@ -22,6 +22,11 @@ npm run test:unit:watch  # Run Vitest in watch mode
 npm run test:e2e         # Run Playwright e2e tests (requires built app)
 ```
 
+**Before pushing changes:**
+- Run `npm run test:unit` and `npm run test:e2e`.
+- If any tests fail, investigate and fix the issue.
+- Re-run the tests until all pass, then push your changes.
+
 To run a single unit test file: `npx vitest run src/__tests__/PlayingField.spec.ts`
 
 CI (`.github/workflows/KickAndRun.yml`) runs lint → type-check → unit tests → build → e2e tests on every push/PR using Node 22.
