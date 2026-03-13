@@ -253,6 +253,7 @@ class GameController extends AbstractController
     {
         return [
             'id' => $gameSession->getId()->toRfc4122(),
+            'lobbyId' => $gameSession->getLobby()->getId()->toRfc4122(),
             'status' => $gameSession->getStatus(),
             'currentTurn' => $gameSession->getCurrentTurn(),
             'gameState' => $gameSession->getGameState(),

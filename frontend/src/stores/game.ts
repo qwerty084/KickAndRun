@@ -5,7 +5,7 @@ import { useGame } from "@/composables/useGame";
 import { useMercure, type ConnectionStatus } from "@/composables/useMercure";
 
 export interface GameEvent {
-  type: "dice_rolled" | "piece_moved" | "game_started" | "turn_passed";
+  type: "dice_rolled" | "piece_moved" | "game_started" | "turn_passed" | "rematch_initiated";
   playerColor: PlayerColor;
   playerName: string;
   isBot: boolean;
@@ -30,6 +30,8 @@ export const useGameStore = defineStore("game", () => {
   const eventLog = ref<GameEvent[]>([]);
   const botThinking = ref(false);
   const lastMovedPiece = ref<{ color: PlayerColor; position: string } | null>(null);
+  const lobbyId = ref<string | null>(null);
+  let onRematchCallback: ((lobbyId: string) => void) | null = null;
 
   const { getGame, rollDice: apiRoll, movePiece: apiMove } = useGame();
   const mercure = useMercure();
@@ -77,6 +79,9 @@ export const useGameStore = defineStore("game", () => {
       const session = await getGame(id);
       if (session) {
         gameState.value = session.gameState;
+        if (session.lobbyId) {
+          lobbyId.value = session.lobbyId;
+        }
       }
     } catch (e) {
       lastError.value = e instanceof Error ? e.message : "Failed to load game";
@@ -231,10 +236,22 @@ export const useGameStore = defineStore("game", () => {
       const nextPlayer = players.value[gs.currentPlayerIndex];
       botThinking.value = nextPlayer?.isBot === true && gs.phase !== "finished";
     }
+
+    // Handle rematch event
+    if (eventType === "rematch_initiated") {
+      const rematchLobbyId = data?.lobbyId as string | undefined;
+      if (rematchLobbyId && onRematchCallback) {
+        onRematchCallback(rematchLobbyId);
+      }
+    }
   }
 
   function unsubscribeMercure() {
     mercure.unsubscribe();
+  }
+
+  function onRematch(callback: (lobbyId: string) => void) {
+    onRematchCallback = callback;
   }
 
   function $reset() {
@@ -251,6 +268,8 @@ export const useGameStore = defineStore("game", () => {
     eventLog.value = [];
     botThinking.value = false;
     lastMovedPiece.value = null;
+    lobbyId.value = null;
+    onRematchCallback = null;
   }
 
   return {
@@ -267,6 +286,7 @@ export const useGameStore = defineStore("game", () => {
     eventLog,
     botThinking,
     lastMovedPiece,
+    lobbyId,
     connectionStatus,
     // Computed
     currentPlayer,
@@ -288,6 +308,7 @@ export const useGameStore = defineStore("game", () => {
     addEvent,
     subscribeMercure,
     unsubscribeMercure,
+    onRematch,
     $reset,
   };
 });

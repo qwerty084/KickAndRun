@@ -41,8 +41,10 @@ class Lobby
     #[ORM\Column(length: 20)]
     private string $status = self::STATUS_WAITING;
 
-    #[ORM\OneToOne(mappedBy: 'lobby', targetEntity: GameSession::class)]
-    private ?GameSession $gameSession = null;
+    /** @var Collection<int, GameSession> */
+    #[ORM\OneToMany(mappedBy: 'lobby', targetEntity: GameSession::class)]
+    #[ORM\OrderBy(['createdAt' => 'DESC'])]
+    private Collection $gameSessions;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -57,6 +59,7 @@ class Lobby
         $this->name = $name;
         $this->hostPlayer = $hostPlayer;
         $this->players = new ArrayCollection([$hostPlayer]);
+        $this->gameSessions = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -115,9 +118,19 @@ class Lobby
         return $this->status;
     }
 
-    public function getGameSession(): ?GameSession
+    /** @return Collection<int, GameSession> */
+    public function getGameSessions(): Collection
     {
-        return $this->gameSession;
+        return $this->gameSessions;
+    }
+
+    public function getLatestGameSession(): ?GameSession
+    {
+        if ($this->gameSessions->isEmpty()) {
+            return null;
+        }
+
+        return $this->gameSessions->first() ?: null;
     }
 
     public function setStatus(string $status): static

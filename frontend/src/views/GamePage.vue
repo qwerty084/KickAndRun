@@ -16,6 +16,7 @@ const gameId = route.params.id as string;
 const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const isRematchLoading = ref(false);
 
 const colorLabels: Record<PlayerColor, string> = {
   green: "🟢 Green",
@@ -66,6 +67,26 @@ function formatToast(event: GameEvent): string {
     return msg;
   }
   return `${name} — ${event.type}`;
+}
+
+async function requestRematch() {
+  if (!store.lobbyId || !store.myPlayerId) return;
+  isRematchLoading.value = true;
+  try {
+    const res = await fetch(`${API_BASE}/lobbies/${store.lobbyId}/rematch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId: store.myPlayerId }),
+    });
+    if (res.ok) {
+      updateSession({ gameId: undefined });
+      router.push({ name: "lobby", params: { id: store.lobbyId } });
+    }
+  } catch {
+    // Silently fail — user can try again
+  } finally {
+    isRematchLoading.value = false;
+  }
 }
 
 function handleFieldClick(position: string) {
@@ -125,6 +146,11 @@ onMounted(async () => {
 
   await store.loadGame(gameId);
   store.subscribeMercure();
+
+  store.onRematch((lobbyId) => {
+    updateSession({ gameId: undefined });
+    router.push({ name: "lobby", params: { id: lobbyId } });
+  });
 });
 
 onUnmounted(() => {
@@ -300,12 +326,22 @@ onUnmounted(() => {
         <p class="text-lg text-neutral-600 dark:text-neutral-400 mb-6">
           {{ colorLabels[store.winner] }} wins!
         </p>
-        <button
-          class="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-6 shadow-md transition-all"
-          @click="router.push({ name: 'home' })"
-        >
-          Back to Home
-        </button>
+        <div class="flex flex-col gap-3">
+          <button
+            v-if="store.lobbyId && store.myPlayerId"
+            :disabled="isRematchLoading"
+            class="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-6 shadow-md transition-all disabled:opacity-50"
+            @click="requestRematch"
+          >
+            {{ isRematchLoading ? "Starting…" : "🔄 Rematch" }}
+          </button>
+          <button
+            class="rounded-xl bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 font-bold py-2.5 px-6 shadow-md transition-all"
+            @click="router.push({ name: 'home' })"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     </div>
   </div>

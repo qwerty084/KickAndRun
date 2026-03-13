@@ -260,7 +260,7 @@ class LobbyController extends AbstractController
             return $this->json(['error' => 'Game has not started yet.'], Response::HTTP_CONFLICT);
         }
 
-        $gameSession = $lobby->getGameSession();
+        $gameSession = $lobby->getLatestGameSession();
 
         if (!$gameSession) {
             return $this->json(['error' => 'Game session not found.'], Response::HTTP_NOT_FOUND);
@@ -320,6 +320,65 @@ class LobbyController extends AbstractController
         ], Response::HTTP_CREATED);
     }
 
+    #[Route('/lobbies/{id}/rematch', name: 'lobby_rematch', methods: ['POST'])]
+    public function rematch(string $id, Request $request): JsonResponse
+    {
+        $lobby = $this->lobbyRepository->find($id);
+
+        if (!$lobby) {
+            return $this->json(['error' => 'Lobby not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $gameSession = $lobby->getLatestGameSession();
+
+        if (!$gameSession || $gameSession->getStatus() !== GameSession::STATUS_FINISHED) {
+            return $this->json(
+                ['error' => 'No finished game to rematch.'],
+                Response::HTTP_CONFLICT,
+            );
+        }
+
+        $data = $request->toArray();
+        $playerId = $data['playerId'] ?? null;
+
+        if (!$playerId) {
+            return $this->json(
+                ['error' => 'Field "playerId" is required.'],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $isMember = false;
+        foreach ($lobby->getPlayers() as $player) {
+            if ($player->getId()->toRfc4122() === $playerId) {
+                $isMember = true;
+                break;
+            }
+        }
+
+        if (!$isMember) {
+            return $this->json(['error' => 'Player is not in this lobby.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $lobby->setStatus(Lobby::STATUS_WAITING);
+        $this->em->flush();
+
+        // Notify game subscribers to redirect to lobby
+        $this->hub->publish(new Update(
+            'game/' . $gameSession->getId()->toRfc4122(),
+            json_encode([
+                'event' => 'rematch_initiated',
+                'data' => [
+                    'lobbyId' => $lobby->getId()->toRfc4122(),
+                ],
+            ], JSON_THROW_ON_ERROR),
+        ));
+
+        $this->publishLobbyUpdate($lobby, 'rematch_initiated');
+
+        return $this->json($this->serializeLobby($lobby));
+    }
+
     /**
      * @param array<string, mixed> $extra
      */
@@ -359,7 +418,7 @@ class LobbyController extends AbstractController
             'updatedAt' => $lobby->getUpdatedAt()->format(\DateTimeInterface::ATOM),
         ];
 
-        $gameSession = $lobby->getGameSession();
+        $gameSession = $lobby->getLatestGameSession();
         if ($gameSession) {
             $data['gameSessionId'] = $gameSession->getId()->toRfc4122();
         }

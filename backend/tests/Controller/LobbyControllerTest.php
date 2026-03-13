@@ -227,4 +227,132 @@ class LobbyControllerTest extends WebTestCase
         self::assertArrayHasKey('gameSessionId', $data);
         self::assertNotEmpty($data['gameSessionId']);
     }
+
+    private function createFinishedGame(): array
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'Rematch Lobby', 'hostName' => 'Alice']));
+        $lobby = json_decode($client->getResponse()->getContent(), true);
+        $lobbyId = $lobby['id'];
+        $hostPlayerId = $lobby['hostPlayer']['id'];
+
+        $client->request('POST', "/api/lobbies/$lobbyId/join", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+        $updated = json_decode($client->getResponse()->getContent(), true);
+        $player2Id = $updated['players'][1]['id'];
+
+        $client->request('POST', "/api/lobbies/$lobbyId/start");
+        $startData = json_decode($client->getResponse()->getContent(), true);
+        $gameId = $startData['gameSessionId'];
+
+        // Force-finish the game session via direct DB manipulation
+        $em = static::getContainer()->get('doctrine.orm.entity_manager');
+        $gameSession = $em->getRepository(\App\Entity\GameSession::class)->find($gameId);
+        $gameSession->setStatus(\App\Entity\GameSession::STATUS_FINISHED);
+        $em->flush();
+
+        return [
+            'client' => $client,
+            'lobbyId' => $lobbyId,
+            'gameId' => $gameId,
+            'hostPlayerId' => $hostPlayerId,
+            'player2Id' => $player2Id,
+        ];
+    }
+
+    public function testRematchResetsLobbyToWaiting(): void
+    {
+        $ctx = $this->createFinishedGame();
+
+        $ctx['client']->request('POST', "/api/lobbies/{$ctx['lobbyId']}/rematch", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerId' => $ctx['hostPlayerId']]));
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode($ctx['client']->getResponse()->getContent(), true);
+        self::assertSame('waiting', $data['status']);
+    }
+
+    public function testRematchRejectsNonMember(): void
+    {
+        $ctx = $this->createFinishedGame();
+
+        $ctx['client']->request('POST', "/api/lobbies/{$ctx['lobbyId']}/rematch", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerId' => '00000000-0000-0000-0000-000000000000']));
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testRematchRejectsActiveGame(): void
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'Active Lobby', 'hostName' => 'Alice']));
+        $lobby = json_decode($client->getResponse()->getContent(), true);
+        $lobbyId = $lobby['id'];
+        $hostId = $lobby['hostPlayer']['id'];
+
+        $client->request('POST', "/api/lobbies/$lobbyId/join", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+
+        $client->request('POST', "/api/lobbies/$lobbyId/start");
+
+        $client->request('POST', "/api/lobbies/$lobbyId/rematch", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerId' => $hostId]));
+
+        self::assertResponseStatusCodeSame(409);
+    }
+
+    public function testRematchAllowsStartingNewGame(): void
+    {
+        $ctx = $this->createFinishedGame();
+
+        // Rematch
+        $ctx['client']->request('POST', "/api/lobbies/{$ctx['lobbyId']}/rematch", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerId' => $ctx['hostPlayerId']]));
+        self::assertResponseIsSuccessful();
+
+        // Start a new game from the same lobby
+        $ctx['client']->request('POST', "/api/lobbies/{$ctx['lobbyId']}/start");
+        self::assertResponseStatusCodeSame(201);
+
+        $data = json_decode($ctx['client']->getResponse()->getContent(), true);
+        self::assertNotEquals($ctx['gameId'], $data['gameSessionId']);
+    }
+
+    public function testGameShowIncludesLobbyId(): void
+    {
+        $client = static::createClient();
+
+        $client->request('POST', '/api/lobbies', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['name' => 'LobbyId Test', 'hostName' => 'Alice']));
+        $lobby = json_decode($client->getResponse()->getContent(), true);
+        $lobbyId = $lobby['id'];
+
+        $client->request('POST', "/api/lobbies/$lobbyId/join", [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['playerName' => 'Bob']));
+
+        $client->request('POST', "/api/lobbies/$lobbyId/start");
+        $startData = json_decode($client->getResponse()->getContent(), true);
+        $gameId = $startData['gameSessionId'];
+
+        $client->request('GET', "/api/games/$gameId");
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('lobbyId', $data);
+        self::assertSame($lobbyId, $data['lobbyId']);
+    }
 }

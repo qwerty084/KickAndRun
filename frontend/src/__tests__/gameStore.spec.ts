@@ -424,4 +424,60 @@ describe("useGameStore", () => {
       expect(store.lastMovedPiece).toBeNull();
     });
   });
+
+  describe("rematch", () => {
+    it("stores lobbyId from loadGame response", async () => {
+      const mockState = makeGameState();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve({ gameState: mockState, lobbyId: "lobby-abc" }),
+        }),
+      );
+
+      const store = useGameStore();
+      await store.loadGame("game-123");
+      expect(store.lobbyId).toBe("lobby-abc");
+    });
+
+    it("onRematch callback is called on rematch_initiated event", () => {
+      const store = useGameStore();
+      store.gameId = "game-1";
+
+      const callback = vi.fn();
+      store.onRematch(callback);
+
+      // Simulate Mercure message
+      // Access internal handler via subscribeMercure (mock EventSource)
+      const mockES = {
+        onopen: null as (() => void) | null,
+        onmessage: null as ((e: { data: string }) => void) | null,
+        onerror: null as (() => void) | null,
+        close: vi.fn(),
+        readyState: 1,
+        CLOSED: 2,
+      };
+      vi.stubGlobal("EventSource", vi.fn(() => mockES));
+
+      store.subscribeMercure();
+
+      // Simulate message
+      mockES.onmessage?.({
+        data: JSON.stringify({
+          event: "rematch_initiated",
+          data: { lobbyId: "lobby-xyz" },
+        }),
+      });
+
+      expect(callback).toHaveBeenCalledWith("lobby-xyz");
+    });
+
+    it("$reset clears lobbyId", () => {
+      const store = useGameStore();
+      store.lobbyId = "lobby-abc";
+      store.$reset();
+      expect(store.lobbyId).toBeNull();
+    });
+  });
 });
