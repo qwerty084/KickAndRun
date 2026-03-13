@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useLobby } from "@/composables/useLobby";
+import { usePlayerSession, type PlayerSession } from "@/composables/usePlayerSession";
 import TheBoard from "@/components/TheBoard.vue";
 import LobbyList from "@/components/LobbyList.vue";
 import CreateLobbyDialog from "@/components/CreateLobbyDialog.vue";
@@ -9,12 +10,33 @@ import JoinLobbyDialog from "@/components/JoinLobbyDialog.vue";
 
 const router = useRouter();
 const { lobbies, loading, error, fetchLobbies, createLobby, joinLobby } = useLobby();
+const { loadSession, clearSession } = usePlayerSession();
 
 const showCreateDialog = ref(false);
 const showJoinDialog = ref(false);
+const activeSession = ref<PlayerSession | null>(null);
 
-onMounted(() => {
+onMounted(async () => {
   fetchLobbies();
+
+  // Check for active session to show "Continue" button
+  const session = loadSession();
+  if (session?.gameId) {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
+      const res = await fetch(`${API_BASE}/games/${session.gameId}/player/${session.playerId}`);
+      if (res.ok) {
+        activeSession.value = session;
+      } else {
+        clearSession();
+      }
+    } catch {
+      // Game no longer exists
+      clearSession();
+    }
+  } else if (session?.lobbyId) {
+    activeSession.value = session;
+  }
 });
 
 async function handleCreate(name: string, hostName: string) {
@@ -46,6 +68,30 @@ async function handleJoin(lobbyId: string, playerName: string) {
     });
   }
 }
+
+function resumeSession() {
+  const session = activeSession.value;
+  if (!session) return;
+
+  if (session.gameId) {
+    router.push({
+      name: "game",
+      params: { id: session.gameId },
+      query: { playerId: session.playerId, playerName: session.playerName },
+    });
+  } else if (session.lobbyId) {
+    router.push({
+      name: "lobby",
+      params: { id: session.lobbyId },
+      query: { playerId: session.playerId, playerName: session.playerName },
+    });
+  }
+}
+
+function dismissSession() {
+  clearSession();
+  activeSession.value = null;
+}
 </script>
 
 <template>
@@ -73,6 +119,35 @@ async function handleJoin(lobbyId: string, playerName: string) {
             <p class="mt-5 text-lg text-neutral-600 dark:text-neutral-400 max-w-lg mx-auto lg:mx-0">
               The beloved German classic — now online. Create a game, invite your friends, and race your pieces home!
             </p>
+
+            <!-- Resume session banner -->
+            <div
+              v-if="activeSession"
+              class="mt-6 mx-auto lg:mx-0 max-w-lg flex items-center gap-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3"
+            >
+              <span class="text-2xl">🔄</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-green-800 dark:text-green-300">
+                  {{ activeSession.gameId ? "Game in progress" : "Lobby waiting" }}
+                </p>
+                <p class="text-xs text-green-600 dark:text-green-400 truncate">
+                  Playing as {{ activeSession.playerName }}
+                </p>
+              </div>
+              <button
+                class="rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 transition-colors"
+                @click="resumeSession"
+              >
+                {{ activeSession.gameId ? "Continue" : "Return" }}
+              </button>
+              <button
+                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 text-xs"
+                @click="dismissSession"
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
 
             <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <button

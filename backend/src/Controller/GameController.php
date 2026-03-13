@@ -42,6 +42,33 @@ class GameController extends AbstractController
         return $this->json($this->serializeGameSession($gameSession));
     }
 
+    #[Route('/games/{id}/player/{playerId}', name: 'game_rejoin', methods: ['GET'])]
+    public function rejoin(string $id, string $playerId): JsonResponse
+    {
+        $gameSession = $this->em->getRepository(GameSession::class)->find($id);
+
+        if (!$gameSession) {
+            return $this->json(['error' => 'Game session not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $players = $gameSession->getLobby()->getPlayers()->toArray();
+        $colors = PlayerColor::inOrder();
+
+        foreach ($players as $index => $player) {
+            /** @var Player $player */
+            if ($player->getId()->toRfc4122() === $playerId) {
+                return $this->json([
+                    'playerIndex' => $index,
+                    'playerName' => $player->getName(),
+                    'isBot' => $player->isBot(),
+                    'color' => isset($colors[$index]) ? $colors[$index]->value : 'unknown',
+                ]);
+            }
+        }
+
+        return $this->json(['error' => 'Player not found in this game.'], Response::HTTP_NOT_FOUND);
+    }
+
     #[Route('/games/{id}/roll', name: 'game_roll', methods: ['POST'])]
     public function roll(string $id, Request $request): JsonResponse
     {

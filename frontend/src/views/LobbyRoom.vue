@@ -3,12 +3,14 @@ import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGame } from "@/composables/useGame";
 import { useMercure } from "@/composables/useMercure";
+import { usePlayerSession } from "@/composables/usePlayerSession";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 
 const route = useRoute();
 const router = useRouter();
 const { startGame } = useGame();
 const mercure = useMercure();
+const { saveSession, updateSession } = usePlayerSession();
 
 const lobbyId = route.params.id as string;
 const myPlayerId = (route.query.playerId as string) ?? "";
@@ -115,6 +117,7 @@ async function redirectToGame() {
 }
 
 function navigateToGame(gameSessionId: string) {
+  updateSession({ gameId: gameSessionId });
   router.push({
     name: "game",
     params: { id: gameSessionId },
@@ -169,6 +172,9 @@ async function handleStart() {
 onMounted(() => {
   fetchLobby();
   subscribeMercure();
+  if (myPlayerId && myPlayerName) {
+    saveSession({ playerId: myPlayerId, playerName: myPlayerName, lobbyId });
+  }
 });
 
 onUnmounted(() => {

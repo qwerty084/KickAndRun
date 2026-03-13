@@ -135,4 +135,40 @@ class GameControllerTest extends WebTestCase
         $client->request('POST', "/api/lobbies/{$lobby['id']}/start");
         $this->assertResponseStatusCodeSame(400);
     }
+
+    public function testRejoinValidatesPlayerMembership(): void
+    {
+        $ctx = $this->createLobbyAndStartGame();
+
+        // Valid player 1
+        $ctx['client']->request('GET', "/api/games/{$ctx['gameId']}/player/{$ctx['player1Id']}");
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($ctx['client']->getResponse()->getContent(), true);
+        $this->assertSame(0, $data['playerIndex']);
+        $this->assertSame('Player1', $data['playerName']);
+        $this->assertFalse($data['isBot']);
+        $this->assertSame('green', $data['color']);
+
+        // Valid player 2
+        $ctx['client']->request('GET', "/api/games/{$ctx['gameId']}/player/{$ctx['player2Id']}");
+        $this->assertResponseIsSuccessful();
+        $data2 = json_decode($ctx['client']->getResponse()->getContent(), true);
+        $this->assertSame(1, $data2['playerIndex']);
+        $this->assertSame('Player2', $data2['playerName']);
+    }
+
+    public function testRejoinRejectsUnknownPlayer(): void
+    {
+        $ctx = $this->createLobbyAndStartGame();
+
+        $ctx['client']->request('GET', "/api/games/{$ctx['gameId']}/player/00000000-0000-0000-0000-000000000000");
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testRejoinRejectsUnknownGame(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/games/00000000-0000-0000-0000-000000000000/player/00000000-0000-0000-0000-000000000001');
+        $this->assertResponseStatusCodeSame(404);
+    }
 }

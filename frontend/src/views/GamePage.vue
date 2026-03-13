@@ -5,6 +5,7 @@ import TheBoard from "@/components/TheBoard.vue";
 import GameLog from "@/components/GameLog.vue";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import { useGameStore } from "@/stores/game";
+import { usePlayerSession } from "@/composables/usePlayerSession";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { PlayerColor } from "@/types/Game";
 import type { GameEvent } from "@/stores/game";
@@ -13,6 +14,8 @@ const route = useRoute();
 const router = useRouter();
 const gameId = route.params.id as string;
 const store = useGameStore();
+const { loadSession, updateSession } = usePlayerSession();
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 const colorLabels: Record<PlayerColor, string> = {
   green: "🟢 Green",
@@ -95,11 +98,29 @@ function handleFieldClick(position: string) {
 }
 
 onMounted(async () => {
-  const playerId = route.query.playerId as string;
-  const playerIndex = parseInt(route.query.playerIndex as string, 10);
+  let playerId = route.query.playerId as string;
+  let playerIndex = parseInt(route.query.playerIndex as string, 10);
+
+  // Try restoring from localStorage if query params are missing (page refresh)
+  if (!playerId || isNaN(playerIndex)) {
+    const session = loadSession();
+    if (session && session.gameId === gameId) {
+      try {
+        const res = await fetch(`${API_BASE}/games/${gameId}/player/${session.playerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          playerId = session.playerId;
+          playerIndex = data.playerIndex;
+        }
+      } catch {
+        // Validation failed — continue as spectator
+      }
+    }
+  }
 
   if (playerId && !isNaN(playerIndex)) {
     store.setMyPlayer(playerId, playerIndex);
+    updateSession({ gameId });
   }
 
   await store.loadGame(gameId);
