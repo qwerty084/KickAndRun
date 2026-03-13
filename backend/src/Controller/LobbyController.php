@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\GameSession;
 use App\Entity\Lobby;
 use App\Entity\Player;
+use App\Game\BotService;
 use App\Game\GameEngine;
 use App\Game\PlayerColor;
 use App\Repository\LobbyRepository;
@@ -25,6 +26,7 @@ class LobbyController extends AbstractController
         private readonly LobbyRepository $lobbyRepository,
         private readonly HubInterface $hub,
         private readonly GameEngine $engine,
+        private readonly BotService $botService,
     ) {
     }
 
@@ -148,6 +150,88 @@ class LobbyController extends AbstractController
         return $this->json($this->serializeLobby($lobby));
     }
 
+    #[Route('/lobbies/{id}/add-bot', name: 'lobby_add_bot', methods: ['POST'])]
+    public function addBot(string $id, Request $request): JsonResponse
+    {
+        $lobby = $this->lobbyRepository->find($id);
+
+        if (!$lobby) {
+            return $this->json(['error' => 'Lobby not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($lobby->getStatus() !== Lobby::STATUS_WAITING) {
+            return $this->json(['error' => 'Lobby is not accepting players.'], Response::HTTP_CONFLICT);
+        }
+
+        if ($lobby->isFull()) {
+            return $this->json(['error' => 'Lobby is full.'], Response::HTTP_CONFLICT);
+        }
+
+        $data = $request->toArray();
+        $hostPlayerId = $data['hostPlayerId'] ?? null;
+
+        if (!$hostPlayerId || $hostPlayerId !== $lobby->getHostPlayer()->getId()->toRfc4122()) {
+            return $this->json(['error' => 'Only the host can add bots.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $botNumber = 1;
+        foreach ($lobby->getPlayers() as $player) {
+            if ($player->isBot()) {
+                $botNumber++;
+            }
+        }
+
+        $bot = new Player('Bot ' . $botNumber, true);
+        $lobby->addPlayer($bot);
+
+        $this->em->persist($bot);
+        $this->em->flush();
+
+        $this->publishLobbyUpdate($lobby, 'player_joined');
+
+        return $this->json($this->serializeLobby($lobby));
+    }
+
+    #[Route('/lobbies/{id}/remove-bot', name: 'lobby_remove_bot', methods: ['POST'])]
+    public function removeBot(string $id, Request $request): JsonResponse
+    {
+        $lobby = $this->lobbyRepository->find($id);
+
+        if (!$lobby) {
+            return $this->json(['error' => 'Lobby not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($lobby->getStatus() !== Lobby::STATUS_WAITING) {
+            return $this->json(['error' => 'Cannot modify players after game started.'], Response::HTTP_CONFLICT);
+        }
+
+        $data = $request->toArray();
+        $hostPlayerId = $data['hostPlayerId'] ?? null;
+        $botPlayerId = $data['botPlayerId'] ?? null;
+
+        if (!$hostPlayerId || $hostPlayerId !== $lobby->getHostPlayer()->getId()->toRfc4122()) {
+            return $this->json(['error' => 'Only the host can remove bots.'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (!$botPlayerId) {
+            return $this->json(['error' => 'Field "botPlayerId" is required.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $botPlayer = $this->em->getRepository(Player::class)->find($botPlayerId);
+
+        if (!$botPlayer || !$botPlayer->isBot()) {
+            return $this->json(['error' => 'Bot player not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $lobby->removePlayer($botPlayer);
+        $this->em->remove($botPlayer);
+        $this->em->flush();
+
+        $this->publishLobbyUpdate($lobby, 'player_left');
+
+        return $this->json($this->serializeLobby($lobby));
+    }
+
     #[Route('/lobbies/{id}', name: 'lobby_delete', methods: ['DELETE'])]
     public function delete(string $id): JsonResponse
     {
@@ -224,10 +308,15 @@ class LobbyController extends AbstractController
             'gameSessionId' => $gameSession->getId()->toRfc4122(),
         ]);
 
+        // If the first player is a bot, auto-play their turns
+        if ($this->botService->isCurrentPlayerBot($gameSession)) {
+            $this->botService->playBotTurns($gameSession);
+        }
+
         return $this->json([
             'gameSessionId' => $gameSession->getId()->toRfc4122(),
             'lobby' => $this->serializeLobby($lobby),
-            'gameState' => $initialState->toArray(),
+            'gameState' => $gameSession->getGameState(),
         ], Response::HTTP_CREATED);
     }
 
@@ -257,10 +346,12 @@ class LobbyController extends AbstractController
             'hostPlayer' => [
                 'id' => $lobby->getHostPlayer()->getId()->toRfc4122(),
                 'name' => $lobby->getHostPlayer()->getName(),
+                'isBot' => $lobby->getHostPlayer()->isBot(),
             ],
             'players' => $lobby->getPlayers()->map(fn (Player $p) => [
                 'id' => $p->getId()->toRfc4122(),
                 'name' => $p->getName(),
+                'isBot' => $p->isBot(),
             ])->toArray(),
             'maxPlayers' => $lobby->getMaxPlayers(),
             'status' => $lobby->getStatus(),

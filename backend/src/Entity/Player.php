@@ -17,13 +17,17 @@ class Player
     #[ORM\Column(length: 64)]
     private string $name;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isBot = false;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    public function __construct(string $name)
+    public function __construct(string $name, bool $isBot = false)
     {
         $this->id = Uuid::v7();
         $this->name = $name;
+        $this->isBot = $isBot;
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -47,5 +51,10 @@ class Player
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function isBot(): bool
+    {
+        return $this->isBot;
     }
 }

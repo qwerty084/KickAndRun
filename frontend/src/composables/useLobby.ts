@@ -6,8 +6,8 @@ export interface Lobby {
   code: string;
   maxPlayers: number;
   status: string;
-  hostPlayer: { id: string; name: string };
-  players: { id: string; name: string }[];
+  hostPlayer: { id: string; name: string; isBot: boolean };
+  players: { id: string; name: string; isBot: boolean }[];
   gameSessionId?: string;
 }
 
@@ -72,5 +72,49 @@ export function useLobby() {
     }
   }
 
-  return { lobbies, loading, error, fetchLobbies, createLobby, joinLobby };
+  async function addBot(lobbyId: string, hostPlayerId: string): Promise<Lobby | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/add-bot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostPlayerId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to add bot: ${res.statusText}`);
+      }
+      return await res.json();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Unknown error";
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function removeBot(lobbyId: string, hostPlayerId: string, botPlayerId: string): Promise<Lobby | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/remove-bot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostPlayerId, botPlayerId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to remove bot: ${res.statusText}`);
+      }
+      return await res.json();
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Unknown error";
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { lobbies, loading, error, fetchLobbies, createLobby, joinLobby, addBot, removeBot };
 }

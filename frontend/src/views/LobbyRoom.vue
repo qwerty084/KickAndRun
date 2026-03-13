@@ -17,8 +17,8 @@ interface LobbyData {
   id: string;
   code: string;
   name: string;
-  hostPlayer: { id: string; name: string };
-  players: { id: string; name: string }[];
+  hostPlayer: { id: string; name: string; isBot: boolean };
+  players: { id: string; name: string; isBot: boolean }[];
   maxPlayers: number;
   status: string;
   gameSessionId?: string;
@@ -31,10 +31,54 @@ let eventSource: EventSource | null = null;
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
+const canAddBot = computed(() => isHost.value && !lobby.value?.players.length || (lobby.value && lobby.value.players.length < lobby.value.maxPlayers));
 const myPlayerIndex = computed(() => {
   if (!lobby.value) return -1;
   return lobby.value.players.findIndex((p) => p.id === myPlayerId);
 });
+
+const addingBot = ref(false);
+
+async function handleAddBot() {
+  if (!lobby.value) return;
+  addingBot.value = true;
+  error.value = null;
+  try {
+    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/add-bot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostPlayerId: myPlayerId }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to add bot");
+    }
+    lobby.value = await res.json();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : "Failed to add bot";
+  } finally {
+    addingBot.value = false;
+  }
+}
+
+async function handleRemoveBot(botPlayerId: string) {
+  if (!lobby.value) return;
+  error.value = null;
+  try {
+    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/remove-bot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostPlayerId: myPlayerId, botPlayerId }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to remove bot");
+    }
+    lobby.value = await res.json();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : "Failed to remove bot";
+  }
+}
 
 async function fetchLobby() {
   try {
@@ -206,6 +250,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                   {{ player.name }}
+                  <span v-if="player.isBot" class="text-xs ml-1">🤖</span>
                   <span v-if="player.id === lobby.hostPlayer.id" class="text-xs text-amber-600 dark:text-amber-400 ml-1">
                     👑 Host
                   </span>
@@ -213,6 +258,13 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
                 </p>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400 capitalize">{{ playerColors[index] }}</p>
               </div>
+              <button
+                v-if="isHost && player.isBot"
+                class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                @click="handleRemoveBot(player.id)"
+              >
+                Remove
+              </button>
             </div>
 
             <!-- Empty slots -->
@@ -224,6 +276,17 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
               <div class="w-8 h-8 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-600"></div>
               <p class="text-sm text-neutral-400 dark:text-neutral-500">Waiting for player...</p>
             </div>
+
+            <!-- Add Bot button -->
+            <button
+              v-if="isHost && canAddBot"
+              :disabled="addingBot"
+              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors font-medium text-sm"
+              @click="handleAddBot"
+            >
+              <span>🤖</span>
+              {{ addingBot ? "Adding..." : "Add Bot" }}
+            </button>
           </div>
 
           <div v-if="isHost" class="text-center">

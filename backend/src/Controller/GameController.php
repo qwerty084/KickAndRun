@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\BotService;
 use App\Game\Exception\InvalidMoveException;
 use App\Game\Exception\NotYourTurnException;
 use App\Game\GameEngine;
@@ -25,6 +26,7 @@ class GameController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly GameEngine $engine,
         private readonly HubInterface $hub,
+        private readonly BotService $botService,
     ) {
     }
 
@@ -91,6 +93,15 @@ class GameController extends AbstractController
 
         $this->publishGameUpdate($gameSession, 'dice_rolled', $response);
 
+        // If next action belongs to a bot (turn passed after no valid moves), trigger bot turns
+        $latestState = GameState::fromArray($gameSession->getGameState());
+        if ($latestState->phase !== GameState::PHASE_FINISHED && $this->botService->isCurrentPlayerBot($gameSession)) {
+            $this->botService->playBotTurns($gameSession);
+        }
+
+        // Return fresh state so the caller sees the post-bot state
+        $response['gameState'] = $gameSession->getGameState();
+
         return $this->json($response);
     }
 
@@ -152,6 +163,15 @@ class GameController extends AbstractController
         ];
 
         $this->publishGameUpdate($gameSession, 'piece_moved', $response);
+
+        // If next player is a bot, auto-play their turns
+        $latestState = GameState::fromArray($gameSession->getGameState());
+        if ($latestState->phase !== GameState::PHASE_FINISHED && $this->botService->isCurrentPlayerBot($gameSession)) {
+            $this->botService->playBotTurns($gameSession);
+        }
+
+        // Return fresh state so the caller sees the post-bot state
+        $response['gameState'] = $gameSession->getGameState();
 
         return $this->json($response);
     }
