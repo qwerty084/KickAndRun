@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "composite": false,
+    "lib": ["ESNext", "DOM"],
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*", "src/**/*.vue", "src/**/*.spec.ts", "src/**/*.test.ts"]
+}

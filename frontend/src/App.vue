@@ -11,6 +11,8 @@ import TheBoard from "./components/TheBoard.vue";
 </template>
 
 <style>
+@reference "tailwindcss";
+
 main {
   border: 3px solid red;
   @apply rounded;
