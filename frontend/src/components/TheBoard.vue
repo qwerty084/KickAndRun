@@ -113,6 +113,8 @@ import PlayingField from "./PlayingField.vue";
 </template>
 
 <style>
+@reference "tailwindcss";
+
 .row-path {
   @apply flex flex-col gap-4;
 }

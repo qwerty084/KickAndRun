@@ -10,10 +10,10 @@ jobs:
                 working-directory: ./frontend
         steps:
             - uses: actions/checkout@v4
-            - name: Use Node.js 18
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: 18
+                  node-version: 22
             - name: npm install
               run: npm ci
             - name: check code style
@@ -22,7 +22,13 @@ jobs:
               run: npx prettier --check src/
             - name: run type checks
               run: npm run type-check
+            - name: run unit tests
+              run: npm run test:unit
             - name: test build process
               run: npm run build
             - name: check for known vulnerabilities
               run: npm audit --audit-level=moderate
+            - name: install playwright browsers
+              run: npx playwright install --with-deps chromium
+            - name: run e2e tests
+              run: npm run test:e2e
