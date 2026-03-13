@@ -2,10 +2,13 @@
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGame } from "@/composables/useGame";
+import { useMercure } from "@/composables/useMercure";
+import ConnectionStatus from "@/components/ConnectionStatus.vue";
 
 const route = useRoute();
 const router = useRouter();
 const { startGame } = useGame();
+const mercure = useMercure();
 
 const lobbyId = route.params.id as string;
 const myPlayerId = (route.query.playerId as string) ?? "";
@@ -27,7 +30,6 @@ interface LobbyData {
 const lobby = ref<LobbyData | null>(null);
 const error = ref<string | null>(null);
 const starting = ref(false);
-let eventSource: EventSource | null = null;
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
@@ -125,43 +127,28 @@ function navigateToGame(gameSessionId: string) {
 }
 
 function subscribeMercure() {
-  const mercureUrl = new URL("/.well-known/mercure", window.location.origin);
-  mercureUrl.searchParams.set("topic", `lobby/${lobbyId}`);
+  mercure.subscribe(`lobby/${lobbyId}`, (payload) => {
+    const p = payload as Record<string, unknown>;
+    const eventType = p.event as string;
 
-  eventSource = new EventSource(mercureUrl.toString());
-
-  eventSource.onmessage = (event) => {
-    try {
-      const payload = JSON.parse(event.data);
-      const eventType: string = payload.event;
-
-      if (payload.lobby) {
-        lobby.value = payload.lobby;
-      }
-
-      if (eventType === "game_started") {
-        const gameSessionId = payload.gameSessionId ?? payload.lobby?.gameSessionId;
-        if (gameSessionId) {
-          navigateToGame(gameSessionId);
-        } else {
-          redirectToGame();
-        }
-      }
-    } catch {
-      // Ignore malformed events
+    if (p.lobby) {
+      lobby.value = p.lobby as LobbyData;
     }
-  };
 
-  eventSource.onerror = () => {
-    // EventSource auto-reconnects; no action needed
-  };
+    if (eventType === "game_started") {
+      const gameSessionId =
+        (p.gameSessionId as string) ?? (p.lobby as LobbyData | undefined)?.gameSessionId;
+      if (gameSessionId) {
+        navigateToGame(gameSessionId);
+      } else {
+        redirectToGame();
+      }
+    }
+  });
 }
 
 function unsubscribeMercure() {
-  if (eventSource) {
-    eventSource.close();
-    eventSource = null;
-  }
+  mercure.unsubscribe();
 }
 
 async function handleStart() {
@@ -207,6 +194,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
         </svg>
         Back to Home
       </button>
+      <ConnectionStatus :status="mercure.status.value" class="ml-auto" />
     </header>
 
     <main class="max-w-lg mx-auto px-4 pt-8">

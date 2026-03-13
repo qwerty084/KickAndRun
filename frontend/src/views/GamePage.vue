@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TheBoard from "@/components/TheBoard.vue";
 import GameLog from "@/components/GameLog.vue";
+import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import { useGameStore } from "@/stores/game";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { PlayerColor } from "@/types/Game";
@@ -127,6 +128,7 @@ onUnmounted(() => {
         Back to Home
       </button>
       <span class="text-sm text-neutral-500 dark:text-neutral-400">Game {{ gameId.substring(0, 8) }}…</span>
+      <ConnectionStatus :status="store.connectionStatus" class="ml-auto" />
     </header>
 
     <!-- Loading -->

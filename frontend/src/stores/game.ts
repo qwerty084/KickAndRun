@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import type { GameState, ValidMove, PlayerColor } from "@/types/Game";
 import { useGame } from "@/composables/useGame";
+import { useMercure, type ConnectionStatus } from "@/composables/useMercure";
 
 export interface GameEvent {
   type: "dice_rolled" | "piece_moved" | "game_started" | "turn_passed";
@@ -31,9 +32,8 @@ export const useGameStore = defineStore("game", () => {
   const lastMovedPiece = ref<{ color: PlayerColor; position: string } | null>(null);
 
   const { getGame, rollDice: apiRoll, movePiece: apiMove } = useGame();
-
-  // EventSource for Mercure
-  let eventSource: EventSource | null = null;
+  const mercure = useMercure();
+  const connectionStatus = computed<ConnectionStatus>(() => mercure.status.value);
 
   // Computed
   const currentPlayer = computed<PlayerColor | null>(() => {
@@ -170,85 +170,71 @@ export const useGameStore = defineStore("game", () => {
   // Mercure subscription
   function subscribeMercure() {
     if (!gameId.value) return;
-    unsubscribeMercure();
+    mercure.subscribe(`game/${gameId.value}`, handleMercureMessage);
+  }
 
-    const mercureUrl = new URL("/.well-known/mercure", window.location.origin);
-    mercureUrl.searchParams.set("topic", `game/${gameId.value}`);
+  function handleMercureMessage(payload: unknown) {
+    const data = (payload as Record<string, unknown>).data as Record<string, unknown> | undefined;
+    const eventType = (payload as Record<string, unknown>).event as string;
 
-    eventSource = new EventSource(mercureUrl.toString());
-    eventSource.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        const eventType: string = payload.event;
-        const data = payload.data;
-
-        if (data?.gameState) {
-          gameState.value = data.gameState;
-          // Clear local valid moves on opponent's update
-          if (!isMyTurn.value) {
-            validMoves.value = [];
-            selectedPieceIndex.value = null;
-          }
-        }
-
-        // Build event log entry
-        const playerColor = data?.playerColor as PlayerColor;
-        const playerName = data?.playerName ?? resolvePlayerName(playerColor);
-        const isBot = data?.isBot ?? isPlayerBot(playerColor);
-
-        if (eventType === "dice_rolled" && playerColor) {
-          addEvent({
-            type: "dice_rolled",
-            playerColor,
-            playerName,
-            isBot,
-            diceRoll: data.diceRoll ?? undefined,
-            timestamp: Date.now(),
-          });
-        }
-
-        if (eventType === "piece_moved" && playerColor) {
-          addEvent({
-            type: "piece_moved",
-            playerColor,
-            playerName,
-            isBot,
-            moved: data.moved ?? undefined,
-            kicked: data.kicked ?? false,
-            extraTurn: data.extraTurn ?? false,
-            winner: data.winner ?? null,
-            timestamp: Date.now(),
-          });
-
-          // Track last moved piece for highlight
-          if (data.moved?.to) {
-            lastMovedPiece.value = { color: playerColor, position: data.moved.to };
-            setTimeout(() => {
-              lastMovedPiece.value = null;
-            }, 1500);
-          }
-        }
-
-        // Update bot thinking state
-        if (data?.gameState) {
-          const nextPlayerIdx = data.gameState.currentPlayerIndex;
-          const nextPlayer = players.value[nextPlayerIdx];
-          botThinking.value = nextPlayer?.isBot === true && data.gameState.phase !== "finished";
-        }
-      } catch {
-        // Ignore malformed events
+    if (data?.gameState) {
+      gameState.value = data.gameState as GameState;
+      // Clear local valid moves on opponent's update
+      if (!isMyTurn.value) {
+        validMoves.value = [];
+        selectedPieceIndex.value = null;
       }
-    };
-    eventSource.onerror = () => {
-      // EventSource auto-reconnects; no action needed
-    };
+    }
+
+    // Build event log entry
+    const playerColor = data?.playerColor as PlayerColor;
+    const playerName = (data?.playerName as string) ?? resolvePlayerName(playerColor);
+    const isBot = (data?.isBot as boolean) ?? isPlayerBot(playerColor);
+
+    if (eventType === "dice_rolled" && playerColor) {
+      addEvent({
+        type: "dice_rolled",
+        playerColor,
+        playerName,
+        isBot,
+        diceRoll: (data?.diceRoll as number) ?? undefined,
+        timestamp: Date.now(),
+      });
+    }
+
+    if (eventType === "piece_moved" && playerColor) {
+      const moved = data?.moved as { pieceIndex: number; from: string; to: string } | undefined;
+      addEvent({
+        type: "piece_moved",
+        playerColor,
+        playerName,
+        isBot,
+        moved: moved ?? undefined,
+        kicked: (data?.kicked as boolean) ?? false,
+        extraTurn: (data?.extraTurn as boolean) ?? false,
+        winner: (data?.winner as PlayerColor) ?? null,
+        timestamp: Date.now(),
+      });
+
+      // Track last moved piece for highlight
+      if (moved?.to) {
+        lastMovedPiece.value = { color: playerColor, position: moved.to };
+        setTimeout(() => {
+          lastMovedPiece.value = null;
+        }, 1500);
+      }
+    }
+
+    // Update bot thinking state
+    if (data?.gameState) {
+      const gs = data.gameState as GameState;
+      const nextPlayer = players.value[gs.currentPlayerIndex];
+      botThinking.value = nextPlayer?.isBot === true && gs.phase !== "finished";
+    }
   }
 
   function unsubscribeMercure() {
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
-    }
+    mercure.unsubscribe();
   }
 
   function $reset() {
@@ -281,6 +267,7 @@ export const useGameStore = defineStore("game", () => {
     eventLog,
     botThinking,
     lastMovedPiece,
+    connectionStatus,
     // Computed
     currentPlayer,
     isMyTurn,
