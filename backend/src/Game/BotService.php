@@ -60,6 +60,7 @@ class BotService
                     'phase' => $state->phase,
                     'isBot' => true,
                     'playerColor' => $currentColor->value,
+                    'playerName' => $currentPlayer->getName(),
                     'gameState' => $state->toArray(),
                 ],
             ];
@@ -94,6 +95,7 @@ class BotService
                             'winner' => $result->winner?->value,
                             'isBot' => true,
                             'playerColor' => $currentColor->value,
+                            'playerName' => $currentPlayer->getName(),
                             'gameState' => $state->toArray(),
                         ],
                     ];

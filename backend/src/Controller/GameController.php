@@ -84,10 +84,15 @@ class GameController extends AbstractController
 
         $this->persistState($gameSession, $newState);
 
+        $playerInfo = $this->resolvePlayerInfo($gameSession, $playerId);
+
         $response = [
             'diceRoll' => $newState->lastDiceRoll,
             'validMoves' => $validMoves,
             'phase' => $newState->phase,
+            'playerColor' => $playerColor->value,
+            'playerName' => $playerInfo['name'] ?? null,
+            'isBot' => $playerInfo['isBot'] ?? false,
             'gameState' => $newState->toArray(),
         ];
 
@@ -150,6 +155,8 @@ class GameController extends AbstractController
 
         $this->persistState($gameSession, $result->newState);
 
+        $playerInfo = $this->resolvePlayerInfo($gameSession, $playerId);
+
         $response = [
             'moved' => [
                 'pieceIndex' => $result->pieceIndex,
@@ -159,6 +166,9 @@ class GameController extends AbstractController
             'kicked' => $result->kicked,
             'extraTurn' => $result->extraTurn,
             'winner' => $result->winner?->value,
+            'playerColor' => $playerColor->value,
+            'playerName' => $playerInfo['name'] ?? null,
+            'isBot' => $playerInfo['isBot'] ?? false,
             'gameState' => $result->newState->toArray(),
         ];
 
@@ -219,8 +229,53 @@ class GameController extends AbstractController
             'status' => $gameSession->getStatus(),
             'currentTurn' => $gameSession->getCurrentTurn(),
             'gameState' => $gameSession->getGameState(),
+            'players' => $this->serializePlayers($gameSession),
             'createdAt' => $gameSession->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'updatedAt' => $gameSession->getUpdatedAt()->format(\DateTimeInterface::ATOM),
         ];
+    }
+
+    /**
+     * @return list<array{id: string, name: string, isBot: bool, color: string}>
+     */
+    private function serializePlayers(GameSession $gameSession): array
+    {
+        $players = $gameSession->getLobby()->getPlayers()->toArray();
+        $colors = PlayerColor::inOrder();
+        $result = [];
+
+        foreach ($players as $index => $player) {
+            /** @var Player $player */
+            $result[] = [
+                'id' => $player->getId()->toRfc4122(),
+                'name' => $player->getName(),
+                'isBot' => $player->isBot(),
+                'color' => isset($colors[$index]) ? $colors[$index]->value : 'unknown',
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array{name: string, isBot: bool, color: string}|null
+     */
+    private function resolvePlayerInfo(GameSession $gameSession, string $playerId): ?array
+    {
+        $players = $gameSession->getLobby()->getPlayers()->toArray();
+        $colors = PlayerColor::inOrder();
+
+        foreach ($players as $index => $player) {
+            /** @var Player $player */
+            if ($player->getId()->toRfc4122() === $playerId && isset($colors[$index])) {
+                return [
+                    'name' => $player->getName(),
+                    'isBot' => $player->isBot(),
+                    'color' => $colors[$index]->value,
+                ];
+            }
+        }
+
+        return null;
     }
 }

@@ -361,4 +361,67 @@ describe("useGameStore", () => {
       expect(store.isLoading).toBe(false);
     });
   });
+
+  describe("event log", () => {
+    it("starts with empty event log", () => {
+      const store = useGameStore();
+      expect(store.eventLog).toEqual([]);
+    });
+
+    it("adds events via addEvent", () => {
+      const store = useGameStore();
+      store.addEvent({
+        type: "dice_rolled",
+        playerColor: "green" as PlayerColor,
+        playerName: "Alice",
+        isBot: false,
+        diceRoll: 4,
+        timestamp: Date.now(),
+      });
+      expect(store.eventLog).toHaveLength(1);
+      expect(store.eventLog[0].diceRoll).toBe(4);
+    });
+
+    it("caps event log at 50 entries", () => {
+      const store = useGameStore();
+      for (let i = 0; i < 60; i++) {
+        store.addEvent({
+          type: "dice_rolled",
+          playerColor: "green" as PlayerColor,
+          playerName: "Alice",
+          isBot: false,
+          diceRoll: i,
+          timestamp: Date.now(),
+        });
+      }
+      expect(store.eventLog.length).toBeLessThanOrEqual(50);
+    });
+
+    it("starts with botThinking false", () => {
+      const store = useGameStore();
+      expect(store.botThinking).toBe(false);
+    });
+
+    it("starts with lastMovedPiece null", () => {
+      const store = useGameStore();
+      expect(store.lastMovedPiece).toBeNull();
+    });
+
+    it("resets event log on $reset", () => {
+      const store = useGameStore();
+      store.addEvent({
+        type: "dice_rolled",
+        playerColor: "green" as PlayerColor,
+        playerName: "Alice",
+        isBot: false,
+        diceRoll: 4,
+        timestamp: Date.now(),
+      });
+      store.botThinking = true;
+      store.$reset();
+      expect(store.eventLog).toEqual([]);
+      expect(store.botThinking).toBe(false);
+      expect(store.lastMovedPiece).toBeNull();
+    });
+  });
 });

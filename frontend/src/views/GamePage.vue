@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from "vue";
+import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TheBoard from "@/components/TheBoard.vue";
+import GameLog from "@/components/GameLog.vue";
 import { useGameStore } from "@/stores/game";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { PlayerColor } from "@/types/Game";
+import type { GameEvent } from "@/stores/game";
 
 const route = useRoute();
 const router = useRouter();
@@ -28,6 +30,39 @@ const pieceSummary = computed(() => {
     return { color, inBase, onPath, inGoal };
   });
 });
+
+const lastActionToast = ref<string | null>(null);
+let toastTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  () => store.eventLog.length,
+  () => {
+    const events = store.eventLog;
+    if (events.length === 0) return;
+    const last = events[events.length - 1];
+    lastActionToast.value = formatToast(last);
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      lastActionToast.value = null;
+    }, 3000);
+  },
+);
+
+function formatToast(event: GameEvent): string {
+  const bot = event.isBot ? "🤖 " : "";
+  const name = `${bot}${event.playerName}`;
+  if (event.type === "dice_rolled") {
+    return `${name} rolled a ${event.diceRoll ?? "?"}`;
+  }
+  if (event.type === "piece_moved") {
+    let msg = `${name} moved piece`;
+    if (event.kicked) msg += " — kicked! 💥";
+    if (event.extraTurn) msg += " — extra turn!";
+    if (event.winner) msg = `🏆 ${event.playerName} wins!`;
+    return msg;
+  }
+  return `${name} — ${event.type}`;
+}
 
 function handleFieldClick(position: string) {
   if (!store.isMyTurn || !store.myColor) return;
@@ -107,8 +142,29 @@ onUnmounted(() => {
 
     <!-- Game layout -->
     <main v-else class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
-      <!-- Board -->
+      <!-- Board column -->
       <div class="flex-1 min-w-0">
+        <!-- Action toast -->
+        <Transition name="toast">
+          <div
+            v-if="lastActionToast"
+            class="mb-3 mx-auto text-center text-sm font-medium py-2 px-4 rounded-lg bg-white dark:bg-neutral-800 shadow-lg border border-neutral-200 dark:border-neutral-700"
+            style="max-width: 700px"
+          >
+            {{ lastActionToast }}
+          </div>
+        </Transition>
+
+        <!-- Bot thinking banner -->
+        <div
+          v-if="store.botThinking"
+          class="mb-3 mx-auto text-center text-sm font-medium py-2 px-4 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 animate-pulse"
+          style="max-width: 700px"
+        >
+          <span class="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-1.5"></span>
+          🤖 Bot is thinking...
+        </div>
+
         <div class="bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto" style="max-width: 700px">
           <div class="p-4 h-full border-2 border-black dark:border-neutral-300 rounded-sm">
             <TheBoard
@@ -185,7 +241,13 @@ onUnmounted(() => {
               class="flex items-center justify-between p-2 rounded-lg transition-colors"
               :class="{ 'bg-amber-50 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700': store.currentPlayer === ps.color }"
             >
-              <span class="text-sm font-medium">{{ colorLabels[ps.color] }}</span>
+              <span class="text-sm font-medium">
+                {{ colorLabels[ps.color] }}
+                <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]?.isBot" class="text-xs">🤖</span>
+                <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]" class="text-xs text-neutral-500 ml-1">
+                  {{ store.players[store.gameState?.players.indexOf(ps.color) ?? -1]?.name }}
+                </span>
+              </span>
               <div class="flex gap-2 text-xs text-neutral-500">
                 <span title="In base">🏠{{ ps.inBase }}</span>
                 <span title="On path">🛤️{{ ps.onPath }}</span>
@@ -193,6 +255,11 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Game Log -->
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <GameLog :events="store.eventLog" :bot-thinking="store.botThinking" />
         </div>
 
         <!-- Error display -->
@@ -220,3 +287,17 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.toast-enter-active {
+  transition: all 0.3s ease-out;
+}
+.toast-leave-active {
+  transition: all 0.3s ease-in;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>
