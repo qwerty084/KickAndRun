@@ -11,6 +11,7 @@ interface Props {
   piece?: PlayerColor | null;
   highlighted?: boolean;
   selected?: boolean;
+  kicked?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -21,6 +22,7 @@ withDefaults(defineProps<Props>(), {
   piece: null,
   highlighted: false,
   selected: false,
+  kicked: false,
 });
 
 const emit = defineEmits<{
@@ -42,14 +44,17 @@ const emit = defineEmits<{
     @click="position ? emit('fieldClick', position) : undefined"
   >
     <!-- Piece token -->
-    <div
-      v-if="piece"
-      :class="[
-        'piece-token absolute rounded-full border-2 border-neutral-900',
-        `piece-${piece}`,
-      ]"
-    ></div>
-    <span v-else :class="['font-bold field-color', textColor, rotationClass]">{{ text }}</span>
+    <Transition :name="kicked ? 'piece-kicked' : 'piece'" appear>
+      <div
+        v-if="piece"
+        :key="piece"
+        :class="[
+          'piece-token absolute rounded-full border-2 border-neutral-900',
+          `piece-${piece}`,
+        ]"
+      ></div>
+    </Transition>
+    <span v-if="!piece" :class="['font-bold field-color', textColor, rotationClass]">{{ text }}</span>
   </div>
 </template>
 
@@ -114,6 +119,68 @@ const emit = defineEmits<{
 
   &.piece-black {
     @apply bg-neutral-700;
+  }
+}
+
+/* Piece enter/leave transitions */
+.piece-enter-active {
+  animation: piece-pop-in 0.25s ease-out;
+}
+
+.piece-leave-active {
+  animation: piece-pop-out 0.2s ease-in forwards;
+}
+
+.piece-kicked-leave-active {
+  animation: piece-shake-out 0.35s ease-in forwards;
+}
+
+@keyframes piece-pop-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes piece-pop-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes piece-shake-out {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  15% {
+    transform: translateX(-3px) scale(1);
+  }
+  30% {
+    transform: translateX(3px) scale(1);
+  }
+  45% {
+    transform: translateX(-2px) scale(0.9);
+  }
+  60% {
+    transform: translateX(2px) scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(0) scale(0);
+    opacity: 0;
   }
 }
 </style>

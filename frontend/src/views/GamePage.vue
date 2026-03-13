@@ -17,6 +17,19 @@ const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const isRematchLoading = ref(false);
+const diceAnimating = ref(false);
+
+watch(
+  () => store.lastDiceRoll,
+  (newVal) => {
+    if (newVal !== null) {
+      diceAnimating.value = true;
+      setTimeout(() => {
+        diceAnimating.value = false;
+      }, 400);
+    }
+  },
+);
 
 const colorLabels: Record<PlayerColor, string> = {
   green: "🟢 Green",
@@ -246,7 +259,7 @@ onUnmounted(() => {
 
         <!-- Dice + Roll -->
         <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4 text-center">
-          <div v-if="store.lastDiceRoll" class="text-6xl mb-3" aria-label="Dice result">
+          <div v-if="store.lastDiceRoll" :class="['text-6xl mb-3', { 'dice-roll': diceAnimating }]" aria-label="Dice result">
             {{ ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][store.lastDiceRoll] }}
           </div>
           <div v-else class="text-6xl mb-3 text-neutral-300 dark:text-neutral-600">🎲</div>
@@ -358,5 +371,30 @@ onUnmounted(() => {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.dice-roll {
+  animation: dice-shake 0.4s ease-out;
+}
+
+@keyframes dice-shake {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  20% {
+    transform: rotate(-15deg) scale(1.1);
+  }
+  40% {
+    transform: rotate(15deg) scale(1.1);
+  }
+  60% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  80% {
+    transform: rotate(5deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
 }
 </style>

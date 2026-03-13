@@ -30,6 +30,7 @@ export const useGameStore = defineStore("game", () => {
   const eventLog = ref<GameEvent[]>([]);
   const botThinking = ref(false);
   const lastMovedPiece = ref<{ color: PlayerColor; position: string } | null>(null);
+  const lastKickedPiece = ref<{ color: PlayerColor; position: string } | null>(null);
   const lobbyId = ref<string | null>(null);
   let onRematchCallback: ((lobbyId: string) => void) | null = null;
 
@@ -228,6 +229,15 @@ export const useGameStore = defineStore("game", () => {
           lastMovedPiece.value = null;
         }, 1500);
       }
+
+      // Track kicked piece for shake animation
+      if ((data?.kicked as boolean) && moved?.from) {
+        // The kicked piece was at the destination before our piece moved there
+        lastKickedPiece.value = { color: playerColor, position: moved.to };
+        setTimeout(() => {
+          lastKickedPiece.value = null;
+        }, 500);
+      }
     }
 
     // Update bot thinking state
@@ -268,6 +278,7 @@ export const useGameStore = defineStore("game", () => {
     eventLog.value = [];
     botThinking.value = false;
     lastMovedPiece.value = null;
+    lastKickedPiece.value = null;
     lobbyId.value = null;
     onRematchCallback = null;
   }
@@ -286,6 +297,7 @@ export const useGameStore = defineStore("game", () => {
     eventLog,
     botThinking,
     lastMovedPiece,
+    lastKickedPiece,
     lobbyId,
     connectionStatus,
     // Computed
