@@ -303,10 +303,11 @@ async function copyLobbyCode() {
             <button
               v-if="isHost && canAddBot"
               :disabled="addingBot"
-              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm"
+              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               @click="handleAddBot"
             >
-              <span>🤖</span>
+              <span v-if="addingBot" class="inline-block w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>🤖</span>
               {{ addingBot ? "Adding..." : "Add Bot" }}
             </button>
           </div>

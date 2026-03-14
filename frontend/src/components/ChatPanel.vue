@@ -15,9 +15,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{ "update:collapsed": [value: boolean] }>();
 
-const { messages, fetchMessages, sendMessage, addMessage } = useChat();
+const { messages, loading, error, fetchMessages, sendMessage, addMessage } = useChat();
 const inputText = ref("");
 const sending = ref(false);
+const sendError = ref<string | null>(null);
 const messagesContainer = ref<HTMLElement | null>(null);
 const isOpen = ref(!props.collapsed);
 
@@ -44,9 +45,12 @@ async function handleSend() {
   if (!text || sending.value) return;
 
   sending.value = true;
+  sendError.value = null;
   const success = await sendMessage(props.context, props.contextId, props.myPlayerId, text);
   if (success) {
     inputText.value = "";
+  } else {
+    sendError.value = error.value ?? "Failed to send message";
   }
   sending.value = false;
 }
@@ -96,7 +100,10 @@ defineExpose({ addMessage });
         ref="messagesContainer"
         class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-sm"
       >
-        <div v-if="messages.length === 0" class="text-center text-neutral-400 dark:text-neutral-500 text-xs py-6">
+        <div v-if="loading" class="flex justify-center py-6">
+          <div class="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
+        </div>
+        <div v-else-if="messages.length === 0" class="text-center text-neutral-400 dark:text-neutral-500 text-xs py-6">
           No messages yet. Say hi! 👋
         </div>
         <div
@@ -122,6 +129,11 @@ defineExpose({ addMessage });
             </p>
           </div>
         </div>
+      </div>
+
+      <!-- Send error -->
+      <div v-if="sendError" class="px-3 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800">
+        {{ sendError }}
       </div>
 
       <!-- Input -->
