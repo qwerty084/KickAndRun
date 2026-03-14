@@ -8,7 +8,12 @@ A multiplayer online board game inspired by **Mensch ärgere dich nicht** — th
 - **Bot players** — lobby hosts can add AI opponents that auto-play
 - **Real-time updates** — Mercure SSE for instant game state sync
 - **Full game rules** — 40-space circular path, must-exit-base on 6, kicking, goal lanes
+- **Rematch** — play again with the same lobby after a game ends
 - **Game activity log** — see every roll, move, and kick as it happens
+- **Real-time chat** — message other players in the lobby and during gameplay
+- **Piece animations** — smooth pop-in/pop-out transitions, kicked piece shake, dice roll animation
+- **Sound effects** — audio feedback for dice rolls, moves, kicks, and wins (with mute toggle)
+- **Authentication** — optional JWT login/register; guest play still works without an account
 - **Connection status** — visual indicator when SSE drops or reconnects
 - **Session persistence** — refresh the page without losing your seat
 - **Responsive UI** — mobile-first with dark mode support
@@ -21,6 +26,7 @@ A multiplayer online board game inspired by **Mensch ärgere dich nicht** — th
 | Backend | Symfony 8.0, PHP 8.5, Doctrine ORM |
 | Database | PostgreSQL 16 |
 | Real-time | Mercure (built into FrankenPHP/Caddy) |
+| Auth | JWT via lexik/jwt-authentication-bundle |
 | Testing | Vitest, Playwright, PHPUnit, PHPStan |
 | Infrastructure | Docker Compose, FrankenPHP |
 
@@ -61,25 +67,36 @@ Open `http://localhost:5173` to play.
 board-games/
 ├── backend/                  # Symfony 8 API
 │   ├── src/
-│   │   ├── Controller/       # GameController, LobbyController
-│   │   ├── Entity/           # Lobby, Player, GameSession
+│   │   ├── Controller/       # AuthController, ChatController, GameController,
+│   │   │                     # HealthController, LobbyController
+│   │   ├── Entity/           # ChatMessage, GameSession, Lobby, Player, User
 │   │   └── Game/             # GameEngine, BotService
 │   ├── tests/
 │   ├── migrations/
 │   └── compose.yaml
 ├── frontend/                 # Vue 3 SPA
 │   ├── src/
-│   │   ├── components/       # TheBoard, GameLog, ConnectionStatus, ...
-│   │   ├── composables/      # useGame, useLobby, useMercure, usePlayerSession
-│   │   ├── stores/           # Pinia game store
+│   │   ├── components/       # TheBoard, ChatPanel, AuthDialog, GameLog,
+│   │   │                     # ConnectionStatus, LobbyCard, ...
+│   │   ├── composables/      # useGame, useLobby, useChat, useMercure,
+│   │   │                     # useSoundEffects, usePlayerSession, apiFetch
+│   │   ├── stores/           # Pinia game store, auth store
 │   │   ├── types/            # TypeScript interfaces
 │   │   └── views/            # HomePage, LobbyRoom, GamePage
 │   ├── e2e/                  # Playwright tests
 │   └── src/__tests__/        # Vitest unit tests
-└── .github/workflows/        # CI pipeline
+└── .github/workflows/        # CI pipeline (frontend + backend)
 ```
 
 ## API Endpoints
+
+### Auth (`/api/auth`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Register a new user (returns JWT) |
+| `POST` | `/auth/login` | Log in (returns JWT) |
+| `GET` | `/auth/me` | Get current user (requires JWT) |
 
 ### Lobbies (`/api/lobbies`)
 
@@ -95,6 +112,7 @@ board-games/
 | `DELETE` | `/lobbies/{id}` | Delete lobby |
 | `POST` | `/lobbies/{id}/start` | Start game |
 | `GET` | `/lobbies/{id}/game` | Get game session ID |
+| `POST` | `/lobbies/{id}/rematch` | Reset lobby for a new game |
 
 ### Games (`/api/games`)
 
@@ -104,6 +122,21 @@ board-games/
 | `GET` | `/games/{id}/player/{playerId}` | Validate player (rejoin) |
 | `POST` | `/games/{id}/roll` | Roll dice |
 | `POST` | `/games/{id}/move` | Move a piece |
+
+### Chat (`/api/chat`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/chat/lobby/{id}/messages` | Get lobby chat history |
+| `POST` | `/chat/lobby/{id}/messages` | Send lobby message |
+| `GET` | `/chat/game/{id}/messages` | Get game chat history |
+| `POST` | `/chat/game/{id}/messages` | Send game message |
+
+### Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
 
 ## Development
 
@@ -121,6 +154,8 @@ npm run test:unit
 # Frontend e2e tests
 npm run test:e2e
 ```
+
+Current test counts: **92 backend** + **154 frontend** = **246 tests**.
 
 ### Lint & Type Check
 
