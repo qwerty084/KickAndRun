@@ -6,6 +6,8 @@ import { useMercure } from "@/composables/useMercure";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { apiFetch } from "@/composables/apiFetch";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
+import ChatPanel from "@/components/ChatPanel.vue";
+import type { ChatMessage } from "@/composables/useChat";
 
 const route = useRoute();
 const router = useRouter();
@@ -31,6 +33,7 @@ interface LobbyData {
 const lobby = ref<LobbyData | null>(null);
 const error = ref<string | null>(null);
 const starting = ref(false);
+const chatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
@@ -133,6 +136,10 @@ function subscribeMercure() {
 
     if (p.lobby) {
       lobby.value = p.lobby as LobbyData;
+    }
+
+    if (eventType === "chat_message" && p.message) {
+      chatPanel.value?.addMessage(p.message as ChatMessage);
     }
 
     if (eventType === "game_started") {
@@ -309,6 +316,16 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
             <p class="mt-3 text-neutral-500">Loading lobby...</p>
           </div>
         </template>
+      </div>
+
+      <!-- Chat -->
+      <div v-if="lobby && myPlayerId" class="mt-4">
+        <ChatPanel
+          ref="chatPanel"
+          context="lobby"
+          :context-id="lobbyId"
+          :my-player-id="myPlayerId"
+        />
       </div>
     </main>
   </div>

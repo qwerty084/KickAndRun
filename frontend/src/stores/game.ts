@@ -34,6 +34,7 @@ export const useGameStore = defineStore("game", () => {
   const lastKickedPiece = ref<{ color: PlayerColor; position: string } | null>(null);
   const lobbyId = ref<string | null>(null);
   let onRematchCallback: ((lobbyId: string) => void) | null = null;
+  let onChatMessageCallback: ((message: Record<string, unknown>) => void) | null = null;
 
   const { getGame, rollDice: apiRoll, movePiece: apiMove } = useGame();
   const mercure = useMercure();
@@ -277,6 +278,14 @@ export const useGameStore = defineStore("game", () => {
         onRematchCallback(rematchLobbyId);
       }
     }
+
+    // Handle chat message
+    if (eventType === "chat_message") {
+      const message = (payload as Record<string, unknown>).message as Record<string, unknown> | undefined;
+      if (message && onChatMessageCallback) {
+        onChatMessageCallback(message);
+      }
+    }
   }
 
   function unsubscribeMercure() {
@@ -285,6 +294,10 @@ export const useGameStore = defineStore("game", () => {
 
   function onRematch(callback: (lobbyId: string) => void) {
     onRematchCallback = callback;
+  }
+
+  function onChatMessage(callback: (message: Record<string, unknown>) => void) {
+    onChatMessageCallback = callback;
   }
 
   function $reset() {
@@ -304,6 +317,7 @@ export const useGameStore = defineStore("game", () => {
     lastKickedPiece.value = null;
     lobbyId.value = null;
     onRematchCallback = null;
+    onChatMessageCallback = null;
   }
 
   return {
@@ -344,6 +358,7 @@ export const useGameStore = defineStore("game", () => {
     subscribeMercure,
     unsubscribeMercure,
     onRematch,
+    onChatMessage,
     $reset,
   };
 });

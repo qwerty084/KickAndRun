@@ -4,11 +4,13 @@ import { useRoute, useRouter } from "vue-router";
 import TheBoard from "@/components/TheBoard.vue";
 import GameLog from "@/components/GameLog.vue";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
+import ChatPanel from "@/components/ChatPanel.vue";
 import { useGameStore } from "@/stores/game";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { useSoundEffects } from "@/composables/useSoundEffects";
 import { apiFetch } from "@/composables/apiFetch";
 import { buildPieceMap } from "@/composables/boardLayout";
+import type { ChatMessage } from "@/composables/useChat";
 import type { PlayerColor } from "@/types/Game";
 import type { GameEvent } from "@/stores/game";
 
@@ -20,6 +22,7 @@ const { loadSession, updateSession } = usePlayerSession();
 const { muted: soundMuted, toggleMute } = useSoundEffects();
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
+const gameChatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
 
 watch(
   () => store.lastDiceRoll,
@@ -164,6 +167,10 @@ onMounted(async () => {
   store.onRematch((lobbyId) => {
     updateSession({ gameId: undefined });
     router.push({ name: "lobby", params: { id: lobbyId } });
+  });
+
+  store.onChatMessage((message) => {
+    gameChatPanel.value?.addMessage(message as unknown as ChatMessage);
   });
 });
 
@@ -331,6 +338,16 @@ onUnmounted(() => {
         <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
           <GameLog :events="store.eventLog" :bot-thinking="store.botThinking" />
         </div>
+
+        <!-- Chat -->
+        <ChatPanel
+          v-if="store.myPlayerId"
+          ref="gameChatPanel"
+          context="game"
+          :context-id="gameId"
+          :my-player-id="store.myPlayerId"
+          :collapsed="true"
+        />
 
         <!-- Error display -->
         <div v-if="store.lastError" class="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
