@@ -183,7 +183,7 @@ onUnmounted(() => {
   <div class="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 dark:from-neutral-900 dark:to-neutral-800">
     <header class="px-4 py-3 flex items-center gap-4">
       <button
-        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors"
         @click="router.push({ name: 'home' })"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -198,7 +198,7 @@ onUnmounted(() => {
       <span class="text-sm text-neutral-500 dark:text-neutral-400">Game {{ gameId.substring(0, 8) }}…</span>
       <ConnectionStatus :status="store.connectionStatus" class="ml-auto" />
       <button
-        class="text-lg hover:opacity-70 transition-opacity"
+        class="text-lg hover:scale-110 hover:opacity-80 transition-all"
         :title="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
         @click="toggleMute"
       >
@@ -281,7 +281,7 @@ onUnmounted(() => {
 
           <button
             :disabled="!store.isMyTurn || store.phase !== 'rolling' || store.isLoading"
-            class="w-full rounded-lg bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold py-2.5 px-4 shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            class="w-full rounded-lg bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold py-2.5 px-4 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
             @click="store.roll()"
           >
             {{ store.isLoading ? "Rolling…" : "Roll Dice" }}
@@ -368,13 +368,13 @@ onUnmounted(() => {
           <button
             v-if="store.lobbyId && store.myPlayerId"
             :disabled="isRematchLoading"
-            class="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-6 shadow-md transition-all disabled:opacity-50"
+            class="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-6 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
             @click="requestRematch"
           >
             {{ isRematchLoading ? "Starting…" : "🔄 Rematch" }}
           </button>
           <button
-            class="rounded-xl bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 font-bold py-2.5 px-6 shadow-md transition-all"
+            class="rounded-xl bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 font-bold py-2.5 px-6 shadow-md hover:-translate-y-0.5 transition-all"
             @click="router.push({ name: 'home' })"
           >
             Back to Home

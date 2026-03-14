@@ -17,7 +17,7 @@ defineEmits<{ join: [lobbyId: string]; refresh: [] }>();
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">Open Games</h2>
       <button
-        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors"
+        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline transition-colors"
         :disabled="loading"
         @click="$emit('refresh')"
       >

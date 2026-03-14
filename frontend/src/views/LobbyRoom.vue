@@ -192,7 +192,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
   <div class="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 dark:from-neutral-900 dark:to-neutral-800">
     <header class="px-4 py-3 flex items-center gap-4">
       <button
-        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+        class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors"
         @click="router.push({ name: 'home' })"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -258,7 +258,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
               </div>
               <button
                 v-if="isHost && player.isBot"
-                class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 hover:underline transition-colors"
                 @click="handleRemoveBot(player.id)"
               >
                 Remove
@@ -279,7 +279,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
             <button
               v-if="isHost && canAddBot"
               :disabled="addingBot"
-              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors font-medium text-sm"
+              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm"
               @click="handleAddBot"
             >
               <span>🤖</span>
@@ -293,7 +293,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
               class="w-full py-3 rounded-xl font-semibold text-white shadow-lg transition-all duration-200"
               :class="
                 canStart && !starting
-                  ? 'bg-green-600 hover:bg-green-700 active:bg-green-800 shadow-green-500/25 hover:shadow-green-500/40'
+                  ? 'bg-green-600 hover:bg-green-700 active:bg-green-800 shadow-green-500/25 hover:shadow-green-500/40 hover:-translate-y-0.5'
                   : 'bg-neutral-300 dark:bg-neutral-600 cursor-not-allowed'
               "
               @click="handleStart"

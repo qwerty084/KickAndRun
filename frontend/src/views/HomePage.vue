@@ -108,7 +108,7 @@ function dismissSession() {
           👤 {{ authStore.user?.username }}
         </span>
         <button
-          class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 hover:underline transition-colors"
           @click="authStore.logout()"
         >
           Log out
@@ -116,7 +116,7 @@ function dismissSession() {
       </div>
       <button
         v-else
-        class="text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+        class="text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:underline transition-colors"
         @click="showAuthDialog = true"
       >
         Log in / Register
@@ -162,13 +162,13 @@ function dismissSession() {
                 </p>
               </div>
               <button
-                class="rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 transition-colors"
+                class="rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
                 @click="resumeSession"
               >
                 {{ activeSession.gameId ? "Continue" : "Return" }}
               </button>
               <button
-                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 text-xs"
+                class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 text-xs hover:scale-110 transition-transform"
                 @click="dismissSession"
                 title="Dismiss"
               >
@@ -178,7 +178,7 @@ function dismissSession() {
 
             <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <button
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold px-7 py-3.5 text-base shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all duration-200"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold px-7 py-3.5 text-base shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all duration-200"
                 @click="showCreateDialog = true"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -187,7 +187,7 @@ function dismissSession() {
                 Create Game
               </button>
               <button
-                class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-semibold px-7 py-3.5 text-base transition-all duration-200"
+                class="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:-translate-y-0.5 font-semibold px-7 py-3.5 text-base transition-all duration-200"
                 @click="showJoinDialog = true"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

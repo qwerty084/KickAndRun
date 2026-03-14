@@ -23,7 +23,7 @@ function handleSubmit() {
         class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6"
       >
         <button
-          class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+          class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:scale-110 transition-all"
           @click="$emit('close')"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -74,14 +74,14 @@ function handleSubmit() {
           <div class="flex gap-3 pt-2">
             <button
               type="button"
-              class="flex-1 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium py-2.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-600 transition-colors"
+              class="flex-1 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium py-2.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-600 hover:-translate-y-0.5 transition-all duration-200"
               @click="$emit('close')"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm transition-colors duration-150"
+              class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
             >
               Create Game
             </button>

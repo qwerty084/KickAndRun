@@ -139,7 +139,7 @@ defineExpose({ addMessage });
         <button
           type="submit"
           :disabled="!inputText.trim() || sending"
-          class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           Send
         </button>

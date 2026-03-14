@@ -13,7 +13,7 @@ const playerColors = ["bg-green-500", "bg-amber-400", "bg-red-500", "bg-neutral-
 
 <template>
   <div
-    class="group relative rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-5 shadow-sm hover:shadow-md transition-all duration-200"
+    class="group relative rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
   >
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
@@ -49,7 +49,7 @@ const playerColors = ["bg-green-500", "bg-amber-400", "bg-red-500", "bg-neutral-
 
     <button
       v-if="lobby.players.length < lobby.maxPlayers"
-      class="mt-4 w-full rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm transition-colors duration-150"
+      class="mt-4 w-full rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
       @click="$emit('join', lobby.id)"
     >
       Join Game
