@@ -267,13 +267,13 @@ class GameEngine
     {
         $entry = $player->entryPosition();
 
-        // Steps already traveled from entry point
-        $stepsFromEntry = ($currentPathIndex - $entry + self::PATH_SIZE) % self::PATH_SIZE;
+        // Steps already traveled from entry point (clockwise = decrementing indices)
+        $stepsFromEntry = ($entry - $currentPathIndex + self::PATH_SIZE) % self::PATH_SIZE;
         $totalSteps = $stepsFromEntry + $roll;
 
         if ($totalSteps < self::PATH_SIZE) {
-            // Still on the walking path
-            return PiecePosition::path(($currentPathIndex + $roll) % self::PATH_SIZE);
+            // Still on the walking path (clockwise = decrement)
+            return PiecePosition::path(($currentPathIndex - $roll + self::PATH_SIZE) % self::PATH_SIZE);
         }
 
         // Entering or moving within goal zone

@@ -22,10 +22,10 @@ enum PlayerColor: string
     public function goalEntryAfter(): int
     {
         return match ($this) {
-            self::Green => 39,
-            self::Yellow => 9,
-            self::Red => 19,
-            self::Black => 29,
+            self::Green => 1,
+            self::Yellow => 11,
+            self::Red => 21,
+            self::Black => 31,
         };
     }
 

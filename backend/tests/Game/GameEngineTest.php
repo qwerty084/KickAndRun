@@ -171,18 +171,18 @@ class GameEngineTest extends TestCase
         $result = $this->engine->movePiece($state, PlayerColor::Green, 0);
 
         $this->assertSame('path:5', $result->from->toString());
-        $this->assertSame('path:9', $result->to->toString());
+        $this->assertSame('path:1', $result->to->toString());
     }
 
     public function testPathWrapsAround(): void
     {
-        $state = $this->createStateWithPieceOnPath(PlayerColor::Yellow, 0, 38);
+        $state = $this->createStateWithPieceOnPath(PlayerColor::Yellow, 0, 2);
 
         $state = $this->engine->rollDice($state, PlayerColor::Yellow, 4);
         $result = $this->engine->movePiece($state, PlayerColor::Yellow, 0);
 
-        $this->assertSame('path:38', $result->from->toString());
-        $this->assertSame('path:2', $result->to->toString());
+        $this->assertSame('path:2', $result->from->toString());
+        $this->assertSame('path:38', $result->to->toString());
     }
 
     // --- Kicking ---
@@ -190,9 +190,9 @@ class GameEngineTest extends TestCase
     public function testKickOpponentPiece(): void
     {
         $state = $this->engine->initializeGame(PlayerColor::inOrder());
-        // Green piece on path:5, Yellow piece on path:8
+        // Green piece on path:5, Yellow piece on path:2 (3 steps clockwise from 5)
         $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(5));
-        $state->setPiece(PlayerColor::Yellow, 0, PiecePosition::path(8));
+        $state->setPiece(PlayerColor::Yellow, 0, PiecePosition::path(2));
 
         $state = $this->engine->rollDice($state, PlayerColor::Green, 3);
         $result = $this->engine->movePiece($state, PlayerColor::Green, 0);
@@ -200,7 +200,7 @@ class GameEngineTest extends TestCase
         $this->assertNotNull($result->kicked);
         $this->assertSame('yellow', $result->kicked['player']);
         $this->assertSame(0, $result->kicked['pieceIndex']);
-        $this->assertSame('path:8', $result->kicked['from']);
+        $this->assertSame('path:2', $result->kicked['from']);
         $this->assertSame('base', $result->kicked['to']);
 
         // Yellow's piece is back in base
@@ -210,14 +210,14 @@ class GameEngineTest extends TestCase
     public function testCannotLandOnOwnPiece(): void
     {
         $state = $this->engine->initializeGame(PlayerColor::inOrder());
-        // Green pieces at path:5 and path:8
+        // Green pieces at path:5 and path:2 (3 steps clockwise from 5)
         $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(5));
-        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(8));
+        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(2));
 
         $state = $this->engine->rollDice($state, PlayerColor::Green, 3);
         $moves = $this->engine->getValidMoves($state, PlayerColor::Green, 3);
 
-        // piece 0 would land on piece 1 at path:8 — should be filtered out
+        // piece 0 would land on piece 1 at path:2 — should be filtered out
         $moveIndices = array_column($moves, 'pieceIndex');
         $this->assertNotContains(0, $moveIndices);
     }
@@ -226,21 +226,21 @@ class GameEngineTest extends TestCase
 
     public function testEnterGoalZone(): void
     {
-        // Green entry=0, so after traveling 39 spaces, piece is at path:39
-        // One more step enters goal:0
-        $state = $this->createStateWithPieceOnPath(PlayerColor::Green, 0, 38);
+        // Green entry=0, clockwise 38 steps from entry lands on path:2
+        // Roll 3 -> 38+3=41 -> goalIndex = 1 -> goal:1
+        $state = $this->createStateWithPieceOnPath(PlayerColor::Green, 0, 2);
 
         $state = $this->engine->rollDice($state, PlayerColor::Green, 3);
         $result = $this->engine->movePiece($state, PlayerColor::Green, 0);
 
-        $this->assertSame('path:38', $result->from->toString());
+        $this->assertSame('path:2', $result->from->toString());
         $this->assertSame('goal:1', $result->to->toString());
     }
 
     public function testCannotOvershootGoal(): void
     {
-        // Green piece at path:38, needs at most 5 to fill goal:3
-        $state = $this->createStateWithPieceOnPath(PlayerColor::Green, 0, 38);
+        // Green piece at path:2 (38 clockwise steps from entry), needs at most 5 to fill goal:3
+        $state = $this->createStateWithPieceOnPath(PlayerColor::Green, 0, 2);
 
         // Roll 6 would try to land at goal:4 — invalid
         $moves = $this->engine->getValidMoves($state, PlayerColor::Green, 6);
@@ -279,9 +279,9 @@ class GameEngineTest extends TestCase
     {
         $state = $this->engine->initializeGame(PlayerColor::inOrder());
         // All pieces on path — no base pieces to trigger must-exit rule
-        $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(5));
-        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(10));
-        $state->setPiece(PlayerColor::Green, 2, PiecePosition::path(15));
+        $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(35));
+        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(30));
+        $state->setPiece(PlayerColor::Green, 2, PiecePosition::path(25));
         $state->setPiece(PlayerColor::Green, 3, PiecePosition::path(20));
 
         $state = $this->engine->rollDice($state, PlayerColor::Green, 6);
@@ -309,18 +309,18 @@ class GameEngineTest extends TestCase
     {
         $state = $this->engine->initializeGame(PlayerColor::inOrder());
         // All pieces on path — no base pieces to trigger must-exit rule
-        $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(5));
-        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(10));
-        $state->setPiece(PlayerColor::Green, 2, PiecePosition::path(15));
+        $state->setPiece(PlayerColor::Green, 0, PiecePosition::path(35));
+        $state->setPiece(PlayerColor::Green, 1, PiecePosition::path(30));
+        $state->setPiece(PlayerColor::Green, 2, PiecePosition::path(25));
         $state->setPiece(PlayerColor::Green, 3, PiecePosition::path(20));
 
-        // First 6: move piece 0 from path:5 -> path:11
+        // First 6: move piece 0 from path:35 -> path:29 (clockwise)
         $state = $this->engine->rollDice($state, PlayerColor::Green, 6);
         $result = $this->engine->movePiece($state, PlayerColor::Green, 0);
         $state = $result->newState;
         $this->assertTrue($result->extraTurn);
 
-        // Second 6: move piece 0 from path:11 -> path:17
+        // Second 6: move piece 0 from path:29 -> path:23 (clockwise)
         $state = $this->engine->rollDice($state, PlayerColor::Green, 6);
         $result = $this->engine->movePiece($state, PlayerColor::Green, 0);
         $state = $result->newState;
@@ -508,10 +508,10 @@ class GameEngineTest extends TestCase
 
     public function testYellowEntersGoalZone(): void
     {
-        // Yellow entry=10, so goal entry after position 9
-        // A piece at path:7 has traveled (7-10+40)%40 = 37 steps
+        // Yellow entry=10, goal entry after position 11 (clockwise)
+        // A piece at path:13 has traveled (10-13+40)%40 = 37 steps clockwise
         // Roll 4 -> 37+4=41 -> goalIndex = 41-40 = 1 -> goal:1
-        $state = $this->createStateWithPieceOnPath(PlayerColor::Yellow, 0, 7);
+        $state = $this->createStateWithPieceOnPath(PlayerColor::Yellow, 0, 13);
 
         $state = $this->engine->rollDice($state, PlayerColor::Yellow, 4);
         $result = $this->engine->movePiece($state, PlayerColor::Yellow, 0);
