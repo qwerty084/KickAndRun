@@ -1,17 +1,31 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 
 const emit = defineEmits<{ create: [name: string, hostName: string]; close: [] }>();
 
 const gameName = ref("");
 const hostName = ref("");
 const submitted = ref(false);
+const gameNameInput = ref<HTMLInputElement | null>(null);
 
 function handleSubmit() {
   submitted.value = true;
   if (!gameName.value.trim() || !hostName.value.trim()) return;
   emit("create", gameName.value.trim(), hostName.value.trim());
 }
+
+function handleEscape(e: KeyboardEvent) {
+  if (e.key === "Escape") emit("close");
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", handleEscape);
+  nextTick(() => gameNameInput.value?.focus());
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleEscape);
+});
 </script>
 
 <template>
@@ -20,9 +34,12 @@ function handleSubmit() {
       <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true"></div>
 
       <div
+        role="dialog"
+        aria-modal="true"
         class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6"
       >
         <button
+          aria-label="Close"
           class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:scale-110 transition-all"
           @click="$emit('close')"
         >
@@ -45,6 +62,7 @@ function handleSubmit() {
             </label>
             <input
               id="game-name"
+              ref="gameNameInput"
               v-model="gameName"
               type="text"
               placeholder="e.g. Friday Night Game"

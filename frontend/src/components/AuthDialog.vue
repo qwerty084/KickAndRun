@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
 const emit = defineEmits<{ close: [] }>();
@@ -9,6 +9,7 @@ const mode = ref<"login" | "register">("login");
 const username = ref("");
 const password = ref("");
 const submitted = ref(false);
+const usernameInput = ref<HTMLInputElement | null>(null);
 
 async function handleSubmit() {
   submitted.value = true;
@@ -23,6 +24,19 @@ async function handleSubmit() {
     emit("close");
   }
 }
+
+function handleEscape(e: KeyboardEvent) {
+  if (e.key === "Escape") emit("close");
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", handleEscape);
+  nextTick(() => usernameInput.value?.focus());
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleEscape);
+});
 </script>
 
 <template>
@@ -31,9 +45,12 @@ async function handleSubmit() {
       <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true"></div>
 
       <div
+        role="dialog"
+        aria-modal="true"
         class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6"
       >
         <button
+          aria-label="Close"
           class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:scale-110 transition-all"
           @click="$emit('close')"
         >
@@ -101,6 +118,7 @@ async function handleSubmit() {
             </label>
             <input
               id="auth-username"
+              ref="usernameInput"
               v-model="username"
               type="text"
               placeholder="e.g. MaxMuster"

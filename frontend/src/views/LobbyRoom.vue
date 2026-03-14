@@ -7,6 +7,7 @@ import { usePlayerSession } from "@/composables/usePlayerSession";
 import { apiFetch } from "@/composables/apiFetch";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import ChatPanel from "@/components/ChatPanel.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import type { ChatMessage } from "@/composables/useChat";
 
 const route = useRoute();
@@ -34,6 +35,7 @@ const lobby = ref<LobbyData | null>(null);
 const error = ref<string | null>(null);
 const starting = ref(false);
 const chatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
+const showLeaveConfirm = ref(false);
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
@@ -193,7 +195,7 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
     <header class="px-4 py-3 flex items-center gap-4">
       <button
         class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors"
-        @click="router.push({ name: 'home' })"
+        @click="showLeaveConfirm = true"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path
@@ -328,5 +330,16 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
         />
       </div>
     </main>
+
+    <ConfirmDialog
+      v-if="showLeaveConfirm"
+      title="Leave Lobby?"
+      message="Are you sure you want to leave? Other players may be waiting for you."
+      confirm-text="Leave"
+      cancel-text="Stay"
+      :destructive="true"
+      @confirm="router.push({ name: 'home' })"
+      @cancel="showLeaveConfirm = false"
+    />
   </div>
 </template>

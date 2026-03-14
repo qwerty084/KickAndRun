@@ -5,6 +5,7 @@ import TheBoard from "@/components/TheBoard.vue";
 import GameLog from "@/components/GameLog.vue";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import ChatPanel from "@/components/ChatPanel.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useGameStore } from "@/stores/game";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { useSoundEffects } from "@/composables/useSoundEffects";
@@ -23,6 +24,7 @@ const { muted: soundMuted, toggleMute } = useSoundEffects();
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
 const gameChatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
+const showLeaveConfirm = ref(false);
 
 watch(
   () => store.lastDiceRoll,
@@ -184,7 +186,7 @@ onUnmounted(() => {
     <header class="px-4 py-3 flex items-center gap-4">
       <button
         class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors"
-        @click="router.push({ name: 'home' })"
+        @click="store.isFinished ? router.push({ name: 'home' }) : (showLeaveConfirm = true)"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path
@@ -382,6 +384,17 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-if="showLeaveConfirm"
+      title="Leave Game?"
+      message="The game is still in progress. Are you sure you want to leave?"
+      confirm-text="Leave"
+      cancel-text="Stay"
+      :destructive="true"
+      @confirm="router.push({ name: 'home' })"
+      @cancel="showLeaveConfirm = false"
+    />
   </div>
 </template>
 
