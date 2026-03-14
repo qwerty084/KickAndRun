@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useGame } from "@/composables/useGame";
 import { useMercure } from "@/composables/useMercure";
 import { usePlayerSession } from "@/composables/usePlayerSession";
+import { apiFetch } from "@/composables/apiFetch";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 
 const route = useRoute();
@@ -15,8 +16,6 @@ const { saveSession, updateSession } = usePlayerSession();
 const lobbyId = route.params.id as string;
 const myPlayerId = (route.query.playerId as string) ?? "";
 const myPlayerName = (route.query.playerName as string) ?? "";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 interface LobbyData {
   id: string;
@@ -48,9 +47,8 @@ async function handleAddBot() {
   addingBot.value = true;
   error.value = null;
   try {
-    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/add-bot`, {
+    const res = await apiFetch(`/lobbies/${lobbyId}/add-bot`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ hostPlayerId: myPlayerId }),
     });
     if (!res.ok) {
@@ -69,9 +67,8 @@ async function handleRemoveBot(botPlayerId: string) {
   if (!lobby.value) return;
   error.value = null;
   try {
-    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/remove-bot`, {
+    const res = await apiFetch(`/lobbies/${lobbyId}/remove-bot`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ hostPlayerId: myPlayerId, botPlayerId }),
     });
     if (!res.ok) {
@@ -86,7 +83,7 @@ async function handleRemoveBot(botPlayerId: string) {
 
 async function fetchLobby() {
   try {
-    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}`);
+    const res = await apiFetch(`/lobbies/${lobbyId}`);
     if (!res.ok) throw new Error("Lobby not found");
     lobby.value = await res.json();
 
@@ -107,7 +104,7 @@ async function redirectToGame() {
 
   // Fallback: fetch from /game endpoint
   try {
-    const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/game`);
+    const res = await apiFetch(`/lobbies/${lobbyId}/game`);
     if (!res.ok) throw new Error("Could not find game session");
     const data = await res.json();
     navigateToGame(data.gameSessionId);

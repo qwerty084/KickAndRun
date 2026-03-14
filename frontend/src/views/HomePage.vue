@@ -3,28 +3,33 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useLobby } from "@/composables/useLobby";
 import { usePlayerSession, type PlayerSession } from "@/composables/usePlayerSession";
+import { apiFetch } from "@/composables/apiFetch";
+import { useAuthStore } from "@/stores/auth";
 import TheBoard from "@/components/TheBoard.vue";
 import LobbyList from "@/components/LobbyList.vue";
 import CreateLobbyDialog from "@/components/CreateLobbyDialog.vue";
 import JoinLobbyDialog from "@/components/JoinLobbyDialog.vue";
+import AuthDialog from "@/components/AuthDialog.vue";
 
 const router = useRouter();
 const { lobbies, loading, error, fetchLobbies, createLobby, joinLobby } = useLobby();
 const { loadSession, clearSession } = usePlayerSession();
+const authStore = useAuthStore();
 
 const showCreateDialog = ref(false);
 const showJoinDialog = ref(false);
+const showAuthDialog = ref(false);
 const activeSession = ref<PlayerSession | null>(null);
 
 onMounted(async () => {
   fetchLobbies();
+  authStore.loadUser();
 
   // Check for active session to show "Continue" button
   const session = loadSession();
   if (session?.gameId) {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
-      const res = await fetch(`${API_BASE}/games/${session.gameId}/player/${session.playerId}`);
+      const res = await apiFetch(`/games/${session.gameId}/player/${session.playerId}`);
       if (res.ok) {
         activeSession.value = session;
       } else {
@@ -96,6 +101,28 @@ function dismissSession() {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-800">
+    <!-- Auth Header -->
+    <header class="relative z-10 max-w-6xl mx-auto px-4 pt-4 flex justify-end">
+      <div v-if="authStore.isAuthenticated" class="flex items-center gap-3">
+        <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          👤 {{ authStore.user?.username }}
+        </span>
+        <button
+          class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 font-medium px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          @click="authStore.logout()"
+        >
+          Log out
+        </button>
+      </div>
+      <button
+        v-else
+        class="text-sm font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 px-3 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+        @click="showAuthDialog = true"
+      >
+        Log in / Register
+      </button>
+    </header>
+
     <!-- Hero Section -->
     <section class="relative overflow-hidden">
       <div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" aria-hidden="true">
@@ -202,6 +229,7 @@ function dismissSession() {
     <!-- Dialogs -->
     <CreateLobbyDialog v-if="showCreateDialog" @create="handleCreate" @close="showCreateDialog = false" />
     <JoinLobbyDialog v-if="showJoinDialog" :lobbies="lobbies" @join="handleJoin" @close="showJoinDialog = false" />
+    <AuthDialog v-if="showAuthDialog" @close="showAuthDialog = false" />
   </div>
 </template>
 

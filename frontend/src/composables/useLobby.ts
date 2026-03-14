@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { apiFetch } from "@/composables/apiFetch";
 
 export interface Lobby {
   id: string;
@@ -11,8 +12,6 @@ export interface Lobby {
   gameSessionId?: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
-
 export function useLobby() {
   const lobbies = ref<Lobby[]>([]);
   const loading = ref(false);
@@ -22,7 +21,7 @@ export function useLobby() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies`);
+      const res = await apiFetch("/lobbies");
       if (!res.ok) throw new Error(`Failed to fetch lobbies: ${res.statusText}`);
       lobbies.value = await res.json();
     } catch (e) {
@@ -36,9 +35,8 @@ export function useLobby() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies`, {
+      const res = await apiFetch("/lobbies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, hostName }),
       });
       if (!res.ok) throw new Error(`Failed to create lobby: ${res.statusText}`);
@@ -57,9 +55,8 @@ export function useLobby() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/join`, {
+      const res = await apiFetch(`/lobbies/${lobbyId}/join`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerName }),
       });
       if (!res.ok) throw new Error(`Failed to join lobby: ${res.statusText}`);
@@ -76,9 +73,8 @@ export function useLobby() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/add-bot`, {
+      const res = await apiFetch(`/lobbies/${lobbyId}/add-bot`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostPlayerId }),
       });
       if (!res.ok) {
@@ -98,9 +94,8 @@ export function useLobby() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/remove-bot`, {
+      const res = await apiFetch(`/lobbies/${lobbyId}/remove-bot`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostPlayerId, botPlayerId }),
       });
       if (!res.ok) {

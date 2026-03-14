@@ -7,6 +7,7 @@ import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import { useGameStore } from "@/stores/game";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { useSoundEffects } from "@/composables/useSoundEffects";
+import { apiFetch } from "@/composables/apiFetch";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { PlayerColor } from "@/types/Game";
 import type { GameEvent } from "@/stores/game";
@@ -17,7 +18,6 @@ const gameId = route.params.id as string;
 const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
 const { muted: soundMuted, toggleMute } = useSoundEffects();
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
 
@@ -88,9 +88,8 @@ async function requestRematch() {
   if (!store.lobbyId || !store.myPlayerId) return;
   isRematchLoading.value = true;
   try {
-    const res = await fetch(`${API_BASE}/lobbies/${store.lobbyId}/rematch`, {
+    const res = await apiFetch(`/lobbies/${store.lobbyId}/rematch`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ playerId: store.myPlayerId }),
     });
     if (res.ok) {
@@ -142,7 +141,7 @@ onMounted(async () => {
     const session = loadSession();
     if (session && session.gameId === gameId) {
       try {
-        const res = await fetch(`${API_BASE}/games/${gameId}/player/${session.playerId}`);
+        const res = await apiFetch(`/games/${gameId}/player/${session.playerId}`);
         if (res.ok) {
           const data = await res.json();
           playerId = session.playerId;

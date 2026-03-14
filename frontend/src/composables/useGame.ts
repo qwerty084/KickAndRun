@@ -1,12 +1,11 @@
 import { ref } from "vue";
+import { apiFetch } from "@/composables/apiFetch";
 import type {
   GameSession,
   RollResponse,
   MoveResponse,
   StartGameResponse,
 } from "@/types/Game";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export function useGame() {
   const loading = ref(false);
@@ -16,7 +15,7 @@ export function useGame() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}`);
+      const res = await apiFetch(`/games/${gameId}`);
       if (!res.ok) throw new Error(`Failed to fetch game: ${res.statusText}`);
       return await res.json();
     } catch (e) {
@@ -31,9 +30,8 @@ export function useGame() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}/roll`, {
+      const res = await apiFetch(`/games/${gameId}/roll`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId }),
       });
       if (!res.ok) {
@@ -57,9 +55,8 @@ export function useGame() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}/move`, {
+      const res = await apiFetch(`/games/${gameId}/move`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId, pieceIndex }),
       });
       if (!res.ok) {
@@ -79,7 +76,7 @@ export function useGame() {
     loading.value = true;
     error.value = null;
     try {
-      const res = await fetch(`${API_BASE}/lobbies/${lobbyId}/start`, {
+      const res = await apiFetch(`/lobbies/${lobbyId}/start`, {
         method: "POST",
       });
       if (!res.ok) {

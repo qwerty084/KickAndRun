@@ -23,7 +23,7 @@ describe("useGame", () => {
       const { getGame } = useGame();
       const result = await getGame("game-123");
 
-      expect(fetch).toHaveBeenCalledWith(`${API_BASE}/games/game-123`);
+      expect(fetch).toHaveBeenCalledWith(`${API_BASE}/games/game-123`, expect.anything());
       expect(result).toEqual(mockResponse);
     });
 
@@ -69,7 +69,6 @@ describe("useGame", () => {
         `${API_BASE}/games/game-123/roll`,
         expect.objectContaining({
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ playerId: "player-1" }),
         }),
       );
