@@ -206,9 +206,30 @@ onUnmounted(() => {
       </button>
     </header>
 
-    <!-- Loading -->
-    <div v-if="store.isLoading && !store.gameState" class="flex justify-center items-center h-64">
-      <p class="text-neutral-500 dark:text-neutral-400 animate-pulse">Loading game…</p>
+    <!-- Loading Skeleton -->
+    <div v-if="store.isLoading && !store.gameState" class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
+      <div class="flex-1 min-w-0">
+        <div class="bg-amber-200/50 dark:bg-amber-900/50 p-2 rounded border-[3px] border-red-600/30 mx-auto animate-pulse" style="max-width: 700px">
+          <div class="p-4 border-2 border-black/10 dark:border-neutral-300/10 rounded-sm aspect-square"></div>
+        </div>
+      </div>
+      <aside class="w-full lg:w-72 flex flex-col gap-4 animate-pulse">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-4 w-24 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
+          <div class="h-6 w-32 rounded bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700 mx-auto mb-3"></div>
+          <div class="h-10 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-4 w-20 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
+          <div class="space-y-2">
+            <div class="h-8 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+            <div class="h-8 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <!-- Error -->
