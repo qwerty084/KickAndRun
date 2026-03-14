@@ -19,6 +19,7 @@ defineEmits<{ join: [lobbyId: string]; refresh: [] }>();
       <button
         class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline transition-colors"
         :disabled="loading"
+        aria-label="Refresh lobby list"
         @click="$emit('refresh')"
       >
         <svg

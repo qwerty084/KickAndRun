@@ -11,7 +11,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="inline-flex items-center gap-1.5 text-xs font-medium">
+  <div class="inline-flex items-center gap-1.5 text-xs font-medium" role="status" aria-live="polite">
     <!-- Connected: subtle green dot -->
     <template v-if="status === 'connected'">
       <span class="w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
