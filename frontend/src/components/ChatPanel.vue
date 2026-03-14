@@ -138,23 +138,28 @@ defineExpose({ addMessage });
 
       <!-- Input -->
       <form
-        class="flex gap-2 px-3 py-2 border-t border-neutral-200 dark:border-neutral-700"
+        class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-700"
         @submit.prevent="handleSend"
       >
-        <input
-          v-model="inputText"
-          type="text"
-          maxlength="500"
-          placeholder="Type a message..."
-          class="flex-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
-        />
-        <button
-          type="submit"
-          :disabled="!inputText.trim() || sending"
-          class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-        >
-          Send
-        </button>
+        <div class="flex gap-2">
+          <input
+            v-model="inputText"
+            type="text"
+            maxlength="500"
+            placeholder="Type a message..."
+            class="flex-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
+          />
+          <button
+            type="submit"
+            :disabled="!inputText.trim() || sending"
+            class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
+            Send
+          </button>
+        </div>
+        <p class="text-[10px] text-neutral-400 dark:text-neutral-500 text-right mt-0.5">
+          {{ inputText.length }}/500
+        </p>
       </form>
     </div>
   </div>

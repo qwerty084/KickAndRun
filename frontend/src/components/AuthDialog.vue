@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useAuthStore } from "@/stores/auth";
 
 const emit = defineEmits<{ close: [] }>();
@@ -9,6 +9,11 @@ const mode = ref<"login" | "register">("login");
 const username = ref("");
 const password = ref("");
 const submitted = ref(false);
+
+// Clear server errors when user starts typing
+watch([username, password], () => {
+  if (authStore.error) authStore.error = null;
+});
 
 async function handleSubmit() {
   submitted.value = true;
@@ -111,6 +116,12 @@ async function handleSubmit() {
               :class="{ 'border-red-400 dark:border-red-500': submitted && !username.trim() }"
             />
             <p v-if="submitted && !username.trim()" class="mt-1 text-xs text-red-500">Username is required.</p>
+            <p
+              v-else-if="username.length > 0 && username.trim().length < 3"
+              class="mt-1 text-xs text-amber-600 dark:text-amber-400"
+            >
+              At least 3 characters needed
+            </p>
           </div>
 
           <div>
@@ -128,6 +139,12 @@ async function handleSubmit() {
               :class="{ 'border-red-400 dark:border-red-500': submitted && !password }"
             />
             <p v-if="submitted && !password" class="mt-1 text-xs text-red-500">Password is required.</p>
+            <p
+              v-else-if="mode === 'register' && password.length > 0 && password.length < 6"
+              class="mt-1 text-xs text-amber-600 dark:text-amber-400"
+            >
+              At least 6 characters needed
+            </p>
           </div>
 
           <div class="flex gap-3 pt-2">

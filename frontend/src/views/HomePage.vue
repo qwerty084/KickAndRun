@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useLobby } from "@/composables/useLobby";
 import { usePlayerSession, type PlayerSession } from "@/composables/usePlayerSession";
@@ -22,10 +22,12 @@ const showAuthDialog = ref(false);
 const activeSession = ref<PlayerSession | null>(null);
 const creating = ref(false);
 const joining = ref(false);
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(async () => {
   fetchLobbies();
   authStore.loadUser();
+  refreshInterval = setInterval(fetchLobbies, 15000);
 
   // Check for active session to show "Continue" button
   const session = loadSession();
@@ -103,6 +105,10 @@ function dismissSession() {
   clearSession();
   activeSession.value = null;
 }
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
+});
 </script>
 
 <template>
