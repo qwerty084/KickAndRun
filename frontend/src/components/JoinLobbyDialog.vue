@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Lobby } from "@/composables/useLobby";
-import { ref } from "vue";
+import { ref, watch, onMounted, onUnmounted, nextTick } from "vue";
 
 interface Props {
   lobbies: Lobby[];
@@ -15,6 +15,8 @@ const emit = defineEmits<{ join: [lobbyId: string, playerName: string]; close: [
 const selectedLobby = ref<Lobby | null>(null);
 const playerName = ref("");
 const submitted = ref(false);
+const dialogPanel = ref<HTMLDivElement | null>(null);
+const playerNameInput = ref<HTMLInputElement | null>(null);
 
 function openJoin(lobby: Lobby) {
   selectedLobby.value = lobby;
@@ -22,11 +24,36 @@ function openJoin(lobby: Lobby) {
   submitted.value = false;
 }
 
+watch(selectedLobby, (val) => {
+  if (val) {
+    nextTick(() => playerNameInput.value?.focus());
+  }
+});
+
 function handleSubmit() {
   submitted.value = true;
   if (!playerName.value.trim() || !selectedLobby.value) return;
   emit("join", selectedLobby.value.id, playerName.value.trim());
 }
+
+function handleEscape(e: KeyboardEvent) {
+  if (e.key === "Escape") {
+    if (selectedLobby.value) {
+      selectedLobby.value = null;
+    } else {
+      emit("close");
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", handleEscape);
+  nextTick(() => dialogPanel.value?.focus());
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleEscape);
+});
 </script>
 
 <template>
@@ -35,9 +62,14 @@ function handleSubmit() {
       <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true"></div>
 
       <div
-        class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6"
+        ref="dialogPanel"
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1"
+        class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6 outline-none"
       >
         <button
+          aria-label="Close"
           class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:scale-110 transition-all"
           @click="$emit('close')"
         >
@@ -89,6 +121,7 @@ function handleSubmit() {
               </label>
               <input
                 id="player-name"
+                ref="playerNameInput"
                 v-model="playerName"
                 type="text"
                 placeholder="e.g. Max"
