@@ -12,7 +12,7 @@ import { useSoundEffects } from "@/composables/useSoundEffects";
 import { apiFetch } from "@/composables/apiFetch";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { ChatMessage } from "@/composables/useChat";
-import type { PlayerColor } from "@/types/Game";
+import type { PlayerColor, ValidMove } from "@/types/Game";
 import type { GameEvent } from "@/stores/game";
 
 const route = useRoute();
@@ -46,12 +46,53 @@ const colorLabels: Record<PlayerColor, string> = {
   black: "⚫ Black",
 };
 
+function formatMove(mv: ValidMove): string {
+  const pieceNum = mv.pieceIndex + 1;
+  const from = mv.from;
+  const to = mv.to;
+
+  if (from === "base") {
+    return `Piece ${pieceNum}: Move onto board`;
+  }
+  if (from.startsWith("path:") && to.startsWith("goal:")) {
+    return `Piece ${pieceNum}: Move into goal`;
+  }
+  if (from.startsWith("goal:") && to.startsWith("goal:")) {
+    const fromIdx = parseInt(from.split(":")[1]);
+    const toIdx = parseInt(to.split(":")[1]);
+    const steps = toIdx - fromIdx;
+    return `Piece ${pieceNum}: Advance ${steps} step${steps !== 1 ? "s" : ""} in goal`;
+  }
+  if (from.startsWith("path:") && to.startsWith("path:")) {
+    const roll = store.lastDiceRoll;
+    if (roll !== null) {
+      return `Piece ${pieceNum}: Move ${roll} step${roll !== 1 ? "s" : ""} forward`;
+    }
+  }
+  return `Piece ${pieceNum}: Move`;
+}
+
 // Play turn notification sound when it becomes the player's turn
 watch(
   () => store.isMyTurn,
   (isMyTurn, wasMyTurn) => {
     if (isMyTurn && !wasMyTurn) {
       playSound("turn");
+    }
+  },
+);
+
+// Update page title when game name or turn changes
+watch(
+  [() => store.gameName, () => store.isMyTurn, () => store.isFinished],
+  () => {
+    const base = store.gameName ?? "Game";
+    if (store.isFinished) {
+      document.title = `${base} – Finished – Mensch ärgere dich nicht`;
+    } else if (store.isMyTurn) {
+      document.title = `${base} – Your Turn! – Mensch ärgere dich nicht`;
+    } else {
+      document.title = `${base} – Mensch ärgere dich nicht`;
     }
   },
 );
@@ -134,26 +175,24 @@ async function requestRematch() {
 function handleFieldClick(position: string) {
   if (!store.isMyTurn || !store.myColor) return;
 
-  // If clicking a piece that has valid moves, select it
+  // If clicking a piece that has valid moves, move or select it
   const pieceMap = store.gameState ? buildPieceMap(store.gameState) : new Map();
   const piece = pieceMap.get(position);
 
   if (piece && piece.color === store.myColor) {
-    // Clicked own piece — select or move it
-    if (store.validMoves.some((m) => m.pieceIndex === piece.pieceIndex)) {
-      if (store.selectedPieceIndex === piece.pieceIndex) {
-        // Double-click same piece — execute if only one move
-        const moves = store.validMoves.filter((m) => m.pieceIndex === piece.pieceIndex);
-        if (moves.length === 1) {
-          store.move(piece.pieceIndex);
-        }
-      } else {
-        store.selectPiece(piece.pieceIndex);
-      }
+    const moves = store.validMoves.filter((m) => m.pieceIndex === piece.pieceIndex);
+    if (moves.length === 1) {
+      // Single destination — execute immediately on first click
+      store.move(piece.pieceIndex);
+    } else if (moves.length > 1) {
+      // Multiple destinations — select piece first, then pick target field
+      store.selectPiece(piece.pieceIndex);
     }
   } else if (store.selectedPieceIndex !== null) {
-    // Clicked a target field — execute the move if valid
-    const selectedMoves = store.validMoves.filter((m) => m.pieceIndex === store.selectedPieceIndex);
+    // Clicked a target field while a piece is selected — execute the move if it matches
+    const selectedMoves = store.validMoves.filter(
+      (m) => m.pieceIndex === store.selectedPieceIndex && m.to === position,
+    );
     if (selectedMoves.length === 1) {
       store.move(store.selectedPieceIndex);
     }
@@ -220,7 +259,7 @@ onUnmounted(() => {
         </svg>
         Back to Home
       </button>
-      <span class="text-sm text-neutral-500 dark:text-neutral-400">Game {{ gameId.substring(0, 8) }}…</span>
+      <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-300 truncate">{{ store.gameName ?? `Game ${gameId.substring(0, 8)}…` }}</span>
       <ConnectionStatus :status="store.connectionStatus" class="ml-auto" />
       <button
         class="text-lg hover:scale-110 hover:opacity-80 transition-all"
@@ -268,28 +307,25 @@ onUnmounted(() => {
     <main v-else class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
       <!-- Board column -->
       <div class="flex-1 min-w-0" role="status" aria-live="polite">
-        <!-- Action toast -->
-        <Transition name="toast">
+        <div class="relative bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
+          <!-- Action toast (absolute overlay, no layout shift) -->
+          <Transition name="toast">
+            <div
+              v-if="lastActionToast"
+              class="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-max max-w-[90%] text-center text-sm font-medium py-1.5 px-4 rounded-lg bg-white/90 dark:bg-neutral-800/90 shadow-lg border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
+            >
+              {{ lastActionToast }}
+            </div>
+          </Transition>
+
+          <!-- Bot thinking banner (absolute overlay) -->
           <div
-            v-if="lastActionToast"
-            class="mb-3 mx-auto max-w-[700px] text-center text-sm font-medium py-2 px-4 rounded-lg bg-white dark:bg-neutral-800 shadow-lg border border-neutral-200 dark:border-neutral-700"
-           
+            v-if="store.botThinking"
+            class="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-max max-w-[90%] text-center text-sm font-medium py-1.5 px-4 rounded-lg bg-amber-100/90 dark:bg-amber-900/80 text-amber-700 dark:text-amber-300 animate-pulse backdrop-blur-sm shadow-lg"
           >
-            {{ lastActionToast }}
+            <span class="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-1.5"></span>
+            🤖 Bot is thinking...
           </div>
-        </Transition>
-
-        <!-- Bot thinking banner -->
-        <div
-          v-if="store.botThinking"
-          class="mb-3 mx-auto max-w-[700px] text-center text-sm font-medium py-2 px-4 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 animate-pulse"
-         
-        >
-          <span class="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-1.5"></span>
-          🤖 Bot is thinking...
-        </div>
-
-        <div class="bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
           <div class="p-4 h-full border-2 border-black dark:border-neutral-300 rounded-sm">
             <TheBoard
               :game-state="store.gameState"
@@ -312,7 +348,10 @@ onUnmounted(() => {
             <span v-if="store.isMyTurn" class="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">YOUR TURN</span>
           </div>
           <p v-if="store.phase === 'rolling'" class="text-xs text-neutral-500 mt-1">
-            Waiting to roll… ({{ store.gameState?.rollAttemptsLeft ?? 0 }} {{ (store.gameState?.rollAttemptsLeft ?? 0) === 1 ? "attempt" : "attempts" }} left)
+            Waiting to roll…
+            <template v-if="(store.gameState?.rollAttemptsLeft ?? 0) > 0">
+              ({{ store.gameState!.rollAttemptsLeft }} {{ store.gameState!.rollAttemptsLeft === 1 ? "attempt" : "attempts" }} left)
+            </template>
           </p>
           <p v-else-if="store.phase === 'moving'" class="text-xs text-neutral-500 mt-1">
             Choose a piece to move
@@ -343,9 +382,9 @@ onUnmounted(() => {
                 :key="mv.pieceIndex"
                 class="text-xs px-2 py-1 rounded cursor-pointer transition-colors"
                 :class="store.selectedPieceIndex === mv.pieceIndex ? 'bg-amber-200 dark:bg-amber-800 font-bold' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700'"
-                @click="store.selectPiece(mv.pieceIndex)"
+                @click="store.move(mv.pieceIndex)"
               >
-                Piece {{ mv.pieceIndex + 1 }}: {{ mv.from }} → {{ mv.to }}
+                {{ formatMove(mv) }}
               </li>
             </ul>
           </div>

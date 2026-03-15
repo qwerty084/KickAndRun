@@ -56,7 +56,7 @@ class BotService
             $rollEvent = [
                 'event' => 'dice_rolled',
                 'data' => [
-                    'diceRoll' => $state->lastDiceRoll,
+                    'diceRoll' => $state->lastActualRoll ?? $state->lastDiceRoll,
                     'phase' => $state->phase,
                     'isBot' => true,
                     'playerColor' => $currentColor->value,

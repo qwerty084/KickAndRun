@@ -114,7 +114,7 @@ class GameController extends AbstractController
         $playerInfo = $this->resolvePlayerInfo($gameSession, $playerId);
 
         $response = [
-            'diceRoll' => $newState->lastDiceRoll,
+            'diceRoll' => $newState->lastActualRoll ?? $newState->lastDiceRoll,
             'validMoves' => $validMoves,
             'phase' => $newState->phase,
             'playerColor' => $playerColor->value,
@@ -254,6 +254,7 @@ class GameController extends AbstractController
         return [
             'id' => $gameSession->getId()->toRfc4122(),
             'lobbyId' => $gameSession->getLobby()->getId()->toRfc4122(),
+            'lobbyName' => $gameSession->getLobby()->getName(),
             'status' => $gameSession->getStatus(),
             'currentTurn' => $gameSession->getCurrentTurn(),
             'gameState' => $gameSession->getGameState(),

@@ -52,6 +52,10 @@ class Lobby
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
+    /** @var list<string>|null */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $playerOrder = null;
+
     public function __construct(string $name, Player $hostPlayer)
     {
         $this->id = Uuid::v7();
@@ -154,5 +158,70 @@ class Lobby
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    /** @return list<string>|null */
+    public function getPlayerOrder(): ?array
+    {
+        return $this->playerOrder;
+    }
+
+    /**
+     * Swap two player positions by their UUIDs (as RFC4122 strings).
+     * If playerOrder has not been set yet, initialise it from the current collection order.
+     */
+    public function swapPlayerColors(string $playerIdA, string $playerIdB): void
+    {
+        $players = $this->players->toArray();
+        $currentOrder = $this->playerOrder ?? array_map(
+            fn (Player $p) => $p->getId()->toRfc4122(),
+            $players,
+        );
+
+        $indexA = array_search($playerIdA, $currentOrder, true);
+        $indexB = array_search($playerIdB, $currentOrder, true);
+
+        if ($indexA === false || $indexB === false) {
+            throw new \InvalidArgumentException('One or both players not found in lobby.');
+        }
+
+        [$currentOrder[$indexA], $currentOrder[$indexB]] = [$currentOrder[$indexB], $currentOrder[$indexA]];
+        $this->playerOrder = array_values($currentOrder);
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Return players sorted by playerOrder (if set), otherwise in collection order.
+     *
+     * @return list<Player>
+     */
+    public function getOrderedPlayers(): array
+    {
+        $players = $this->players->toArray();
+
+        if ($this->playerOrder === null) {
+            return array_values($players);
+        }
+
+        $map = [];
+        foreach ($players as $player) {
+            $map[$player->getId()->toRfc4122()] = $player;
+        }
+
+        $ordered = [];
+        foreach ($this->playerOrder as $id) {
+            if (isset($map[$id])) {
+                $ordered[] = $map[$id];
+            }
+        }
+
+        // Append any players not in playerOrder (e.g. newly joined)
+        foreach ($players as $player) {
+            if (!in_array($player->getId()->toRfc4122(), $this->playerOrder, true)) {
+                $ordered[] = $player;
+            }
+        }
+
+        return array_values($ordered);
     }
 }

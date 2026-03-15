@@ -37,7 +37,7 @@ const emit = defineEmits<{
         @field-click="emit('fieldClick', $event)"
       />
     </div>
-    <div :class="['flex h-full justify-center items-center mx-auto font-bold text-2xl', rotationClass]">B</div>
+    <div :class="['flex h-full justify-center items-center mx-auto', rotationClass]"></div>
     <div class="flex flex-col gap-4">
       <PlayingField
         :fieldColor="$props.color"

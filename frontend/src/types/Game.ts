@@ -49,6 +49,7 @@ export interface MoveResponse {
 export interface GameSession {
   id: string;
   lobbyId: string;
+  lobbyName?: string;
   status: string;
   currentTurn: number;
   gameState: GameState;

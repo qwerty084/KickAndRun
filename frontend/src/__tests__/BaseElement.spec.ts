@@ -14,9 +14,9 @@ describe('BaseElement', () => {
     expect(wrapper.findAllComponents(PlayingField)).toHaveLength(4)
   })
 
-  it('renders "B" label text', () => {
+  it('does not render "B" label text (removed debug label)', () => {
     const wrapper = mount(BaseElement, { props: { color: 'red' } })
-    expect(wrapper.text()).toContain('B')
+    expect(wrapper.text()).not.toContain('B')
   })
 
   it('applies rotation class when provided', () => {

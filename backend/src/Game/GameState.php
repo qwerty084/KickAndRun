@@ -12,6 +12,12 @@ final class GameState
      * @param list<PlayerColor> $players
      * @param array<string, list<PiecePosition>> $pieces  Keyed by PlayerColor value
      */
+    /**
+     * Transient: holds the dice value that was just rolled, even after advanceToNextPlayer()
+     * clears lastDiceRoll. Never persisted — only used for Mercure event publishing.
+     */
+    public ?int $lastActualRoll = null;
+
     public function __construct(
         public readonly array $players,
         public int $currentPlayerIndex,

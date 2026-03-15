@@ -52,6 +52,7 @@ class GameEngine
         $newState = $state->clone();
         $roll = $forcedRoll ?? random_int(1, 6);
         $newState->lastDiceRoll = $roll;
+        $newState->lastActualRoll = $roll; // Persists through advanceToNextPlayer() for event publishing
 
         $allInBase = $this->allPiecesInBase($newState, $player);
 

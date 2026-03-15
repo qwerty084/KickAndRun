@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useGame } from "@/composables/useGame";
 import { useMercure } from "@/composables/useMercure";
@@ -48,6 +48,31 @@ const myPlayerIndex = computed(() => {
 
 const addingBot = ref(false);
 
+const swappingColor = ref(false);
+
+async function handleSwapColor(targetPlayerId: string) {
+  if (!lobby.value || !myPlayerId || swappingColor.value) return;
+  // Can't swap with yourself
+  if (targetPlayerId === myPlayerId) return;
+  swappingColor.value = true;
+  error.value = null;
+  try {
+    const res = await apiFetch(`/lobbies/${lobbyId}/swap-color`, {
+      method: "POST",
+      body: JSON.stringify({ requestingPlayerId: myPlayerId, targetPlayerId }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to swap color");
+    }
+    lobby.value = await res.json();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : "Failed to swap color";
+  } finally {
+    swappingColor.value = false;
+  }
+}
+
 async function handleAddBot() {
   if (!lobby.value) return;
   addingBot.value = true;
@@ -69,8 +94,7 @@ async function handleAddBot() {
   }
 }
 
-async function handleRemoveBot(botPlayerId: string) {
-  if (!lobby.value) return;
+async function handleRemoveBot(botPlayerId: string) {  if (!lobby.value) return;
   error.value = null;
   try {
     const res = await apiFetch(`/lobbies/${lobbyId}/remove-bot`, {
@@ -190,6 +214,15 @@ onUnmounted(() => {
 
 const playerColors = ["green", "yellow", "red", "black"] as const;
 
+watch(
+  () => lobby.value?.name,
+  (name) => {
+    if (name) {
+      document.title = `${name} – Mensch ärgere dich nicht`;
+    }
+  },
+);
+
 async function copyLobbyCode() {
   if (!lobby.value) return;
   try {
@@ -262,15 +295,22 @@ async function copyLobbyCode() {
                   : 'border-neutral-200 dark:border-neutral-700'
               "
             >
-              <div
-                class="w-8 h-8 rounded-full border-2 border-black flex-shrink-0"
-                :class="{
-                  'bg-green-700': playerColors[index] === 'green',
-                  'bg-amber-400': playerColors[index] === 'yellow',
-                  'bg-red-600': playerColors[index] === 'red',
-                  'bg-black': playerColors[index] === 'black',
-                }"
-              ></div>
+              <!-- Color swatch — clickable to swap if it's not your own color -->
+              <button
+                :disabled="player.id === myPlayerId || swappingColor || !myPlayerId"
+                :title="player.id !== myPlayerId && myPlayerId ? `Swap to ${playerColors[index]}` : undefined"
+                class="w-8 h-8 rounded-full border-2 border-black flex-shrink-0 transition-transform disabled:cursor-default"
+                :class="[
+                  {
+                    'bg-green-700': playerColors[index] === 'green',
+                    'bg-amber-400': playerColors[index] === 'yellow',
+                    'bg-red-600': playerColors[index] === 'red',
+                    'bg-black': playerColors[index] === 'black',
+                  },
+                  player.id !== myPlayerId && myPlayerId ? 'hover:scale-110 cursor-pointer ring-2 ring-transparent hover:ring-white' : '',
+                ]"
+                @click="player.id !== myPlayerId && myPlayerId ? handleSwapColor(player.id) : undefined"
+              ></button>
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-neutral-900 dark:text-neutral-100 truncate">
                   {{ player.name }}
@@ -280,7 +320,10 @@ async function copyLobbyCode() {
                   </span>
                   <span v-if="player.id === myPlayerId" class="text-xs text-neutral-500 ml-1">(You)</span>
                 </p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400 capitalize">{{ playerColors[index] }}</p>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
+                  {{ playerColors[index] }}
+                  <span v-if="player.id !== myPlayerId && myPlayerId" class="text-neutral-400 dark:text-neutral-500"> · click to swap</span>
+                </p>
               </div>
               <button
                 v-if="isHost && player.isBot"

@@ -38,7 +38,7 @@ const emit = defineEmits<{
       {
         'cursor-pointer hover:brightness-110': position && (highlighted || selected || piece),
         'ring-2 ring-yellow-400 ring-offset-1 animate-pulse': highlighted,
-        'ring-2 ring-blue-500 ring-offset-1': selected,
+        'ring-[3px] ring-white ring-offset-[2px] ring-offset-blue-500 selected-glow': selected,
       },
     ]"
     @click="position ? emit('fieldClick', position) : undefined"
@@ -49,7 +49,7 @@ const emit = defineEmits<{
         v-if="piece"
         :key="piece"
         :class="[
-          'piece-token absolute rounded-full border-2 border-neutral-900',
+          'piece-token absolute rounded-full border-2',
           `piece-${piece}`,
         ]"
       ></div>
@@ -106,19 +106,32 @@ const emit = defineEmits<{
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 
   &.piece-green {
-    @apply bg-green-600;
+    @apply bg-green-400 border-green-900;
   }
 
   &.piece-yellow {
-    @apply bg-amber-300;
+    @apply bg-amber-200 border-amber-700;
   }
 
   &.piece-red {
-    @apply bg-red-500;
+    @apply bg-red-300 border-red-900;
   }
 
   &.piece-black {
-    @apply bg-neutral-700;
+    @apply bg-neutral-950 border-neutral-400;
+  }
+}
+
+.selected-glow {
+  animation: selected-pulse 1s ease-in-out infinite;
+}
+
+@keyframes selected-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px #3b82f6, 0 0 8px 3px rgba(59, 130, 246, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 2px #3b82f6, 0 0 16px 6px rgba(59, 130, 246, 0.9);
   }
 }
 

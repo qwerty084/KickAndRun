@@ -61,7 +61,7 @@ describe("PlayingField", () => {
     const wrapper = mount(PlayingField, {
       props: { fieldColor: "white", position: "path:5", selected: true },
     });
-    expect(wrapper.find(".playingfield").classes()).toContain("ring-2");
+    expect(wrapper.find(".playingfield").classes()).toContain("selected-glow");
   });
 
   it("applies rotation class to text", () => {
@@ -135,11 +135,11 @@ describe("BaseElement", () => {
     expect(wrapper.emitted("fieldClick")).toEqual([["base:green:0"]]);
   });
 
-  it("renders the B label", () => {
+  it("does not render a B label (removed debug label)", () => {
     const wrapper = mount(BaseElement, {
       props: { color: "yellow" },
     });
-    expect(wrapper.text()).toContain("B");
+    expect(wrapper.text()).not.toContain("B");
   });
 
   it("applies rotation class to B label", () => {

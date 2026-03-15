@@ -21,6 +21,7 @@ export interface GameEvent {
 export const useGameStore = defineStore("game", () => {
   const gameId = ref<string | null>(null);
   const gameState = ref<GameState | null>(null);
+  const gameName = ref<string | null>(null);
   const validMoves = ref<ValidMove[]>([]);
   const selectedPieceIndex = ref<number | null>(null);
   const myPlayerId = ref<string | null>(null);
@@ -83,6 +84,9 @@ export const useGameStore = defineStore("game", () => {
       const session = await getGame(id);
       if (session) {
         gameState.value = session.gameState;
+        if (session.lobbyName) {
+          gameName.value = session.lobbyName;
+        }
         if (session.lobbyId) {
           lobbyId.value = session.lobbyId;
         }
@@ -304,6 +308,7 @@ export const useGameStore = defineStore("game", () => {
     unsubscribeMercure();
     gameId.value = null;
     gameState.value = null;
+    gameName.value = null;
     validMoves.value = [];
     selectedPieceIndex.value = null;
     myPlayerId.value = null;
@@ -324,6 +329,7 @@ export const useGameStore = defineStore("game", () => {
     // State
     gameId,
     gameState,
+    gameName,
     validMoves,
     selectedPieceIndex,
     myPlayerId,

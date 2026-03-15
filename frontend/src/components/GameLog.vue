@@ -39,7 +39,25 @@ function formatEvent(event: GameEvent): string {
   }
 
   if (event.type === "piece_moved") {
-    let msg = `${name} moved piece`;
+    const pieceNum = event.moved ? event.moved.pieceIndex + 1 : "";
+    let action = "";
+
+    if (event.moved) {
+      const { from, to } = event.moved;
+      if (from === "base") {
+        action = `moved piece ${pieceNum} onto the board`;
+      } else if (from.startsWith("path:") && to.startsWith("goal:")) {
+        action = `moved piece ${pieceNum} into the goal`;
+      } else if (from.startsWith("goal:")) {
+        action = `advanced piece ${pieceNum} in the goal`;
+      } else {
+        action = `moved piece ${pieceNum} forward`;
+      }
+    } else {
+      action = "moved a piece";
+    }
+
+    let msg = `${name} ${action}`;
     if (event.kicked) {
       msg += " and kicked an opponent! 💥";
     }

@@ -379,6 +379,51 @@ class LobbyController extends AbstractController
         return $this->json($this->serializeLobby($lobby));
     }
 
+    #[Route('/lobbies/{id}/swap-color', name: 'lobby_swap_color', methods: ['POST'])]
+    public function swapColor(string $id, Request $request): JsonResponse
+    {
+        $lobby = $this->lobbyRepository->find($id);
+
+        if (!$lobby) {
+            return $this->json(['error' => 'Lobby not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($lobby->getStatus() !== Lobby::STATUS_WAITING) {
+            return $this->json(['error' => 'Cannot swap colors while game is in progress.'], Response::HTTP_CONFLICT);
+        }
+
+        $data = $request->toArray();
+        $requestingPlayerId = $data['requestingPlayerId'] ?? null;
+        $targetPlayerId = $data['targetPlayerId'] ?? null;
+
+        if (!$requestingPlayerId || !$targetPlayerId) {
+            return $this->json(
+                ['error' => 'Fields "requestingPlayerId" and "targetPlayerId" are required.'],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $playerIds = array_map(
+            fn (Player $p) => $p->getId()->toRfc4122(),
+            $lobby->getPlayers()->toArray(),
+        );
+
+        if (!in_array($requestingPlayerId, $playerIds, true) || !in_array($targetPlayerId, $playerIds, true)) {
+            return $this->json(['error' => 'One or both players not found in this lobby.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $lobby->swapPlayerColors($requestingPlayerId, $targetPlayerId);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->em->flush();
+        $this->publishLobbyUpdate($lobby, 'color_swapped');
+
+        return $this->json($this->serializeLobby($lobby));
+    }
+
     /**
      * @param array<string, mixed> $extra
      */
@@ -407,11 +452,11 @@ class LobbyController extends AbstractController
                 'name' => $lobby->getHostPlayer()->getName(),
                 'isBot' => $lobby->getHostPlayer()->isBot(),
             ],
-            'players' => $lobby->getPlayers()->map(fn (Player $p) => [
+            'players' => array_map(fn (Player $p) => [
                 'id' => $p->getId()->toRfc4122(),
                 'name' => $p->getName(),
                 'isBot' => $p->isBot(),
-            ])->toArray(),
+            ], $lobby->getOrderedPlayers()),
             'maxPlayers' => $lobby->getMaxPlayers(),
             'status' => $lobby->getStatus(),
             'createdAt' => $lobby->getCreatedAt()->format(\DateTimeInterface::ATOM),

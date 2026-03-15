@@ -102,18 +102,18 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
       <!-- Middle column: path:1 + green goals -->
       <div class="row-path">
         <PlayingField field-color="white" position="path:1" :piece="getPiece('path:1')" :highlighted="isHighlighted('path:1')" :selected="isSelected('path:1')" @field-click="handleClick" />
-        <PlayingField field-color="green" text="a" rotation-class="rotate-180" position="goal:green:0" :piece="getPiece('goal:green:0')" :highlighted="isHighlighted('goal:green:0')" @field-click="handleClick" />
-        <PlayingField field-color="green" text="b" rotation-class="rotate-180" position="goal:green:1" :piece="getPiece('goal:green:1')" :highlighted="isHighlighted('goal:green:1')" @field-click="handleClick" />
-        <PlayingField field-color="green" text="c" rotation-class="rotate-180" position="goal:green:2" :piece="getPiece('goal:green:2')" :highlighted="isHighlighted('goal:green:2')" @field-click="handleClick" />
+        <PlayingField field-color="green" position="goal:green:0" :piece="getPiece('goal:green:0')" :highlighted="isHighlighted('goal:green:0')" @field-click="handleClick" />
+        <PlayingField field-color="green" position="goal:green:1" :piece="getPiece('goal:green:1')" :highlighted="isHighlighted('goal:green:1')" @field-click="handleClick" />
+        <PlayingField field-color="green" position="goal:green:2" :piece="getPiece('goal:green:2')" :highlighted="isHighlighted('goal:green:2')" @field-click="handleClick" />
       </div>
       <!-- Right column: approach + entry (path:37-39, path:0) -->
       <div class="row-path">
-        <PlayingField field-color="green" text="A" rotation-class="rotate-180" position="path:0" :piece="getPiece('path:0')" :highlighted="isHighlighted('path:0')" :selected="isSelected('path:0')" @field-click="handleClick" />
+        <PlayingField field-color="green" position="path:0" :piece="getPiece('path:0')" :highlighted="isHighlighted('path:0')" :selected="isSelected('path:0')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:39" :piece="getPiece('path:39')" :highlighted="isHighlighted('path:39')" :selected="isSelected('path:39')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:38" :piece="getPiece('path:38')" :highlighted="isHighlighted('path:38')" :selected="isSelected('path:38')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:37" :piece="getPiece('path:37')" :highlighted="isHighlighted('path:37')" :selected="isSelected('path:37')" @field-click="handleClick" />
       </div>
-      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3">&xrarr;</div>
+      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3 opacity-0 pointer-events-none" aria-hidden="true">&xrarr;</div>
     </div>
 
     <!-- Green Base (top-right) -->
@@ -136,33 +136,33 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
       </div>
       <div class="row-path">
         <PlayingField field-color="white" position="path:11" :piece="getPiece('path:11')" :highlighted="isHighlighted('path:11')" :selected="isSelected('path:11')" @field-click="handleClick" />
-        <PlayingField field-color="yellow" text="a" rotation-class="rotate-180" position="goal:yellow:0" :piece="getPiece('goal:yellow:0')" :highlighted="isHighlighted('goal:yellow:0')" @field-click="handleClick" />
-        <PlayingField field-color="yellow" text="b" rotation-class="rotate-180" position="goal:yellow:1" :piece="getPiece('goal:yellow:1')" :highlighted="isHighlighted('goal:yellow:1')" @field-click="handleClick" />
-        <PlayingField field-color="yellow" text="c" rotation-class="rotate-180" position="goal:yellow:2" :piece="getPiece('goal:yellow:2')" :highlighted="isHighlighted('goal:yellow:2')" @field-click="handleClick" />
+        <PlayingField field-color="yellow" position="goal:yellow:0" :piece="getPiece('goal:yellow:0')" :highlighted="isHighlighted('goal:yellow:0')" @field-click="handleClick" />
+        <PlayingField field-color="yellow" position="goal:yellow:1" :piece="getPiece('goal:yellow:1')" :highlighted="isHighlighted('goal:yellow:1')" @field-click="handleClick" />
+        <PlayingField field-color="yellow" position="goal:yellow:2" :piece="getPiece('goal:yellow:2')" :highlighted="isHighlighted('goal:yellow:2')" @field-click="handleClick" />
       </div>
       <div class="row-path">
-        <PlayingField field-color="yellow" text="A" rotation-class="rotate-180" position="path:10" :piece="getPiece('path:10')" :highlighted="isHighlighted('path:10')" :selected="isSelected('path:10')" @field-click="handleClick" />
+        <PlayingField field-color="yellow" position="path:10" :piece="getPiece('path:10')" :highlighted="isHighlighted('path:10')" :selected="isSelected('path:10')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:9" :piece="getPiece('path:9')" :highlighted="isHighlighted('path:9')" :selected="isSelected('path:9')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:8" :piece="getPiece('path:8')" :highlighted="isHighlighted('path:8')" :selected="isSelected('path:8')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:7" :piece="getPiece('path:7')" :highlighted="isHighlighted('path:7')" :selected="isSelected('path:7')" @field-click="handleClick" />
       </div>
-      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3">&xrarr;</div>
+      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3 opacity-0 pointer-events-none" aria-hidden="true">&xrarr;</div>
     </div>
 
     <!-- Center cross -->
     <div class="flex flex-col w-[85%] justify-around">
       <div class="flex justify-between">
         <div><PlayingField field-color="white" position="path:6" :piece="getPiece('path:6')" :highlighted="isHighlighted('path:6')" :selected="isSelected('path:6')" @field-click="handleClick" /></div>
-        <div><PlayingField field-color="green" text="d" rotation-class="rotate-180" position="goal:green:3" :piece="getPiece('goal:green:3')" :highlighted="isHighlighted('goal:green:3')" @field-click="handleClick" /></div>
+        <div><PlayingField field-color="green" position="goal:green:3" :piece="getPiece('goal:green:3')" :highlighted="isHighlighted('goal:green:3')" @field-click="handleClick" /></div>
         <div><PlayingField field-color="white" position="path:36" :piece="getPiece('path:36')" :highlighted="isHighlighted('path:36')" :selected="isSelected('path:36')" @field-click="handleClick" /></div>
       </div>
       <div class="flex justify-between">
-        <div><PlayingField field-color="yellow" text="d" rotation-class="rotate-90" position="goal:yellow:3" :piece="getPiece('goal:yellow:3')" :highlighted="isHighlighted('goal:yellow:3')" @field-click="handleClick" /></div>
-        <div><PlayingField field-color="red" text="d" rotation-class="-rotate-90" position="goal:red:3" :piece="getPiece('goal:red:3')" :highlighted="isHighlighted('goal:red:3')" @field-click="handleClick" /></div>
+        <div><PlayingField field-color="yellow" position="goal:yellow:3" :piece="getPiece('goal:yellow:3')" :highlighted="isHighlighted('goal:yellow:3')" @field-click="handleClick" /></div>
+        <div><PlayingField field-color="red" position="goal:red:3" :piece="getPiece('goal:red:3')" :highlighted="isHighlighted('goal:red:3')" @field-click="handleClick" /></div>
       </div>
       <div class="flex justify-between">
         <div><PlayingField field-color="white" position="path:16" :piece="getPiece('path:16')" :highlighted="isHighlighted('path:16')" :selected="isSelected('path:16')" @field-click="handleClick" /></div>
-        <div><PlayingField field-color="black" text="d" text-color="white" position="goal:black:3" :piece="getPiece('goal:black:3')" :highlighted="isHighlighted('goal:black:3')" @field-click="handleClick" /></div>
+        <div><PlayingField field-color="black" position="goal:black:3" :piece="getPiece('goal:black:3')" :highlighted="isHighlighted('goal:black:3')" @field-click="handleClick" /></div>
         <div><PlayingField field-color="white" position="path:26" :piece="getPiece('path:26')" :highlighted="isHighlighted('path:26')" :selected="isSelected('path:26')" @field-click="handleClick" /></div>
       </div>
     </div>
@@ -177,17 +177,17 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
       </div>
       <div class="row-path">
         <PlayingField field-color="white" position="path:21" :piece="getPiece('path:21')" :highlighted="isHighlighted('path:21')" :selected="isSelected('path:21')" @field-click="handleClick" />
-        <PlayingField field-color="red" text="a" rotation-class="rotate-180" position="goal:red:0" :piece="getPiece('goal:red:0')" :highlighted="isHighlighted('goal:red:0')" @field-click="handleClick" />
-        <PlayingField field-color="red" text="b" rotation-class="rotate-180" position="goal:red:1" :piece="getPiece('goal:red:1')" :highlighted="isHighlighted('goal:red:1')" @field-click="handleClick" />
-        <PlayingField field-color="red" text="c" rotation-class="rotate-180" position="goal:red:2" :piece="getPiece('goal:red:2')" :highlighted="isHighlighted('goal:red:2')" @field-click="handleClick" />
+        <PlayingField field-color="red" position="goal:red:0" :piece="getPiece('goal:red:0')" :highlighted="isHighlighted('goal:red:0')" @field-click="handleClick" />
+        <PlayingField field-color="red" position="goal:red:1" :piece="getPiece('goal:red:1')" :highlighted="isHighlighted('goal:red:1')" @field-click="handleClick" />
+        <PlayingField field-color="red" position="goal:red:2" :piece="getPiece('goal:red:2')" :highlighted="isHighlighted('goal:red:2')" @field-click="handleClick" />
       </div>
       <div class="row-path">
-        <PlayingField field-color="red" text="A" rotation-class="rotate-180" position="path:20" :piece="getPiece('path:20')" :highlighted="isHighlighted('path:20')" :selected="isSelected('path:20')" @field-click="handleClick" />
+        <PlayingField field-color="red" position="path:20" :piece="getPiece('path:20')" :highlighted="isHighlighted('path:20')" :selected="isSelected('path:20')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:19" :piece="getPiece('path:19')" :highlighted="isHighlighted('path:19')" :selected="isSelected('path:19')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:18" :piece="getPiece('path:18')" :highlighted="isHighlighted('path:18')" :selected="isSelected('path:18')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:17" :piece="getPiece('path:17')" :highlighted="isHighlighted('path:17')" :selected="isSelected('path:17')" @field-click="handleClick" />
       </div>
-      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3">&xrarr;</div>
+      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3 opacity-0 pointer-events-none" aria-hidden="true">&xrarr;</div>
     </div>
 
     <!-- Black Base (bottom-left) -->
@@ -209,17 +209,17 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
       </div>
       <div class="row-path">
         <PlayingField field-color="white" position="path:31" :piece="getPiece('path:31')" :highlighted="isHighlighted('path:31')" :selected="isSelected('path:31')" @field-click="handleClick" />
-        <PlayingField field-color="black" text="a" text-color="white" rotation-class="rotate-180" position="goal:black:0" :piece="getPiece('goal:black:0')" :highlighted="isHighlighted('goal:black:0')" @field-click="handleClick" />
-        <PlayingField field-color="black" text="b" text-color="white" rotation-class="rotate-180" position="goal:black:1" :piece="getPiece('goal:black:1')" :highlighted="isHighlighted('goal:black:1')" @field-click="handleClick" />
-        <PlayingField field-color="black" text="c" text-color="white" rotation-class="rotate-180" position="goal:black:2" :piece="getPiece('goal:black:2')" :highlighted="isHighlighted('goal:black:2')" @field-click="handleClick" />
+        <PlayingField field-color="black" position="goal:black:0" :piece="getPiece('goal:black:0')" :highlighted="isHighlighted('goal:black:0')" @field-click="handleClick" />
+        <PlayingField field-color="black" position="goal:black:1" :piece="getPiece('goal:black:1')" :highlighted="isHighlighted('goal:black:1')" @field-click="handleClick" />
+        <PlayingField field-color="black" position="goal:black:2" :piece="getPiece('goal:black:2')" :highlighted="isHighlighted('goal:black:2')" @field-click="handleClick" />
       </div>
       <div class="row-path">
-        <PlayingField field-color="black" text="A" text-color="white" rotation-class="rotate-180" position="path:30" :piece="getPiece('path:30')" :highlighted="isHighlighted('path:30')" :selected="isSelected('path:30')" @field-click="handleClick" />
+        <PlayingField field-color="black" position="path:30" :piece="getPiece('path:30')" :highlighted="isHighlighted('path:30')" :selected="isSelected('path:30')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:29" :piece="getPiece('path:29')" :highlighted="isHighlighted('path:29')" :selected="isSelected('path:29')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:28" :piece="getPiece('path:28')" :highlighted="isHighlighted('path:28')" :selected="isSelected('path:28')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:27" :piece="getPiece('path:27')" :highlighted="isHighlighted('path:27')" :selected="isSelected('path:27')" @field-click="handleClick" />
       </div>
-      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3">&xrarr;</div>
+      <div class="absolute -right-[5.5rem] text-7xl rotate-90 top-3 opacity-0 pointer-events-none" aria-hidden="true">&xrarr;</div>
     </div>
 
     <!-- Red Base (bottom-right) -->
