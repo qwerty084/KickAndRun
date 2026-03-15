@@ -20,11 +20,12 @@ const router = useRouter();
 const gameId = route.params.id as string;
 const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
-const { muted: soundMuted, toggleMute } = useSoundEffects();
+const { play: playSound, muted: soundMuted, toggleMute } = useSoundEffects();
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
 const gameChatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
 const showLeaveConfirm = ref(false);
+const showRematchDialog = ref(false);
 
 watch(
   () => store.lastDiceRoll,
@@ -44,6 +45,28 @@ const colorLabels: Record<PlayerColor, string> = {
   red: "🔴 Red",
   black: "⚫ Black",
 };
+
+// Play turn notification sound when it becomes the player's turn
+watch(
+  () => store.isMyTurn,
+  (isMyTurn, wasMyTurn) => {
+    if (isMyTurn && !wasMyTurn) {
+      playSound("turn");
+    }
+  },
+);
+
+// Show rematch dialog with a delay after game finishes
+watch(
+  () => store.isFinished,
+  (finished) => {
+    if (finished) {
+      setTimeout(() => {
+        showRematchDialog.value = true;
+      }, 1500);
+    }
+  },
+);
 
 const pieceSummary = computed(() => {
   if (!store.gameState) return [];
@@ -69,7 +92,7 @@ watch(
     if (toastTimeout) clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => {
       lastActionToast.value = null;
-    }, 3000);
+    }, 5000);
   },
 );
 
@@ -202,15 +225,37 @@ onUnmounted(() => {
       <button
         class="text-lg hover:scale-110 hover:opacity-80 transition-all"
         :title="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
+        :aria-label="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
         @click="toggleMute"
       >
         {{ soundMuted ? "🔇" : "🔊" }}
       </button>
     </header>
 
-    <!-- Loading -->
-    <div v-if="store.isLoading && !store.gameState" class="flex justify-center items-center h-64">
-      <p class="text-neutral-500 dark:text-neutral-400 animate-pulse">Loading game…</p>
+    <!-- Loading Skeleton -->
+    <div v-if="store.isLoading && !store.gameState" class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
+      <div class="flex-1 min-w-0">
+        <div class="bg-amber-200/50 dark:bg-amber-900/50 p-2 rounded border-[3px] border-red-600/30 mx-auto animate-pulse" style="max-width: 700px">
+          <div class="p-4 border-2 border-black/10 dark:border-neutral-300/10 rounded-sm aspect-square"></div>
+        </div>
+      </div>
+      <aside class="w-full lg:w-72 flex flex-col gap-4 animate-pulse">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-4 w-24 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
+          <div class="h-6 w-32 rounded bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700 mx-auto mb-3"></div>
+          <div class="h-10 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+          <div class="h-4 w-20 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
+          <div class="space-y-2">
+            <div class="h-8 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+            <div class="h-8 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
+          </div>
+        </div>
+      </aside>
     </div>
 
     <!-- Error -->
@@ -222,13 +267,13 @@ onUnmounted(() => {
     <!-- Game layout -->
     <main v-else class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
       <!-- Board column -->
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0" role="status" aria-live="polite">
         <!-- Action toast -->
         <Transition name="toast">
           <div
             v-if="lastActionToast"
-            class="mb-3 mx-auto text-center text-sm font-medium py-2 px-4 rounded-lg bg-white dark:bg-neutral-800 shadow-lg border border-neutral-200 dark:border-neutral-700"
-            style="max-width: 700px"
+            class="mb-3 mx-auto max-w-[700px] text-center text-sm font-medium py-2 px-4 rounded-lg bg-white dark:bg-neutral-800 shadow-lg border border-neutral-200 dark:border-neutral-700"
+           
           >
             {{ lastActionToast }}
           </div>
@@ -237,14 +282,14 @@ onUnmounted(() => {
         <!-- Bot thinking banner -->
         <div
           v-if="store.botThinking"
-          class="mb-3 mx-auto text-center text-sm font-medium py-2 px-4 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 animate-pulse"
-          style="max-width: 700px"
+          class="mb-3 mx-auto max-w-[700px] text-center text-sm font-medium py-2 px-4 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 animate-pulse"
+         
         >
           <span class="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-1.5"></span>
           🤖 Bot is thinking...
         </div>
 
-        <div class="bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto" style="max-width: 700px">
+        <div class="bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
           <div class="p-4 h-full border-2 border-black dark:border-neutral-300 rounded-sm">
             <TheBoard
               :game-state="store.gameState"
@@ -328,9 +373,9 @@ onUnmounted(() => {
                 </span>
               </span>
               <div class="flex gap-2 text-xs text-neutral-500">
-                <span title="In base">🏠{{ ps.inBase }}</span>
-                <span title="On path">🛤️{{ ps.onPath }}</span>
-                <span title="In goal">🏁{{ ps.inGoal }}</span>
+                <span title="In base" :aria-label="ps.inBase + ' pieces in base'">🏠{{ ps.inBase }}</span>
+                <span title="On path" :aria-label="ps.onPath + ' pieces on path'">🛤️{{ ps.onPath }}</span>
+                <span title="In goal" :aria-label="ps.inGoal + ' pieces in goal'">🏁{{ ps.inGoal }}</span>
               </div>
             </div>
           </div>
@@ -359,7 +404,8 @@ onUnmounted(() => {
     </main>
 
     <!-- Win dialog -->
-    <div v-if="store.isFinished && store.winner" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <Transition name="fade">
+      <div v-if="store.isFinished && store.winner && showRematchDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-4">
         <div class="text-6xl mb-4">🏆</div>
         <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">Game Over!</h2>
@@ -383,7 +429,8 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </Transition>
 
     <ConfirmDialog
       v-if="showLeaveConfirm"
@@ -409,6 +456,17 @@ onUnmounted(() => {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.fade-enter-active {
+  transition: opacity 0.3s ease-out;
+}
+.fade-leave-active {
+  transition: opacity 0.2s ease-in;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .dice-roll {

@@ -36,6 +36,7 @@ const error = ref<string | null>(null);
 const starting = ref(false);
 const chatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
 const showLeaveConfirm = ref(false);
+const codeCopied = ref(false);
 
 const isHost = computed(() => lobby.value?.hostPlayer.id === myPlayerId);
 const canStart = computed(() => (lobby.value?.players.length ?? 0) >= 2);
@@ -188,6 +189,17 @@ onUnmounted(() => {
 });
 
 const playerColors = ["green", "yellow", "red", "black"] as const;
+
+async function copyLobbyCode() {
+  if (!lobby.value) return;
+  try {
+    await navigator.clipboard.writeText(lobby.value.code);
+    codeCopied.value = true;
+    setTimeout(() => (codeCopied.value = false), 2000);
+  } catch {
+    // Fallback: select text for manual copy
+  }
+}
 </script>
 
 <template>
@@ -219,7 +231,19 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
           <div class="text-center mb-6">
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{{ lobby.name }}</h1>
             <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Code: <span class="font-mono font-bold text-amber-600 dark:text-amber-400 text-lg">{{ lobby.code }}</span>
+              Code:
+              <span class="font-mono font-bold text-amber-600 dark:text-amber-400 text-lg">{{ lobby.code }}</span>
+              <button
+                class="ml-2 text-xs font-medium px-2 py-0.5 rounded-lg transition-all duration-200"
+                :class="
+                  codeCopied
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400'
+                "
+                @click="copyLobbyCode"
+              >
+                {{ codeCopied ? "✓ Copied!" : "📋 Copy" }}
+              </button>
             </p>
             <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Share this code with friends to join</p>
           </div>
@@ -281,10 +305,11 @@ const playerColors = ["green", "yellow", "red", "black"] as const;
             <button
               v-if="isHost && canAddBot"
               :disabled="addingBot"
-              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm"
+              class="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:-translate-y-0.5 transition-all duration-200 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               @click="handleAddBot"
             >
-              <span>🤖</span>
+              <span v-if="addingBot" class="inline-block w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>🤖</span>
               {{ addingBot ? "Adding..." : "Add Bot" }}
             </button>
           </div>

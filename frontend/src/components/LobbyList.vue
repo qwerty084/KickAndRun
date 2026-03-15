@@ -19,6 +19,7 @@ defineEmits<{ join: [lobbyId: string]; refresh: [] }>();
       <button
         class="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:underline transition-colors"
         :disabled="loading"
+        aria-label="Refresh lobby list"
         @click="$emit('refresh')"
       >
         <svg
@@ -42,8 +43,23 @@ defineEmits<{ join: [lobbyId: string]; refresh: [] }>();
       {{ error }}
     </div>
 
-    <div v-if="loading && lobbies.length === 0" class="flex justify-center py-12">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-amber-300 border-t-amber-600"></div>
+    <div v-if="loading && lobbies.length === 0" class="grid gap-4 sm:grid-cols-2">
+      <div v-for="i in 4" :key="'skeleton-' + i" class="rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-5 shadow-sm animate-pulse">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="h-5 w-3/4 rounded bg-neutral-200 dark:bg-neutral-700"></div>
+            <div class="mt-2 h-3 w-1/3 rounded bg-neutral-200 dark:bg-neutral-700"></div>
+          </div>
+          <div class="h-5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="mt-4 flex items-center gap-3">
+          <div class="flex -space-x-1.5">
+            <div class="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 border-2 border-white dark:border-neutral-800"></div>
+          </div>
+          <div class="h-3 w-24 rounded bg-neutral-200 dark:bg-neutral-700"></div>
+        </div>
+        <div class="mt-4 h-10 rounded-xl bg-neutral-200 dark:bg-neutral-700"></div>
+      </div>
     </div>
 
     <div v-else-if="lobbies.length === 0" class="text-center py-12">

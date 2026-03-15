@@ -61,7 +61,7 @@ function formatEvent(event: GameEvent): string {
     <h3 class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
       Game Log
     </h3>
-    <div ref="logContainer" class="flex-1 overflow-y-auto space-y-1 min-h-0 max-h-48 pr-1 scrollbar-thin">
+    <div ref="logContainer" class="flex-1 overflow-y-auto space-y-1 min-h-0 max-h-48 pr-1 scrollbar-thin" aria-live="polite" aria-relevant="additions">
       <p v-if="events.length === 0" class="text-xs text-neutral-400 dark:text-neutral-500 italic">
         No actions yet...
       </p>
