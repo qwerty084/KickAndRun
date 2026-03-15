@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { useGameStore } from "@/stores/game";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { useSoundEffects } from "@/composables/useSoundEffects";
+import { useTheme } from "@/composables/useTheme";
 import { apiFetch } from "@/composables/apiFetch";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { ChatMessage } from "@/composables/useChat";
@@ -21,6 +22,7 @@ const gameId = route.params.id as string;
 const store = useGameStore();
 const { loadSession, updateSession } = usePlayerSession();
 const { play: playSound, muted: soundMuted, toggleMute } = useSoundEffects();
+const { isDark: themeDark, toggle: toggleTheme } = useTheme();
 const isRematchLoading = ref(false);
 const diceAnimating = ref(false);
 const gameChatPanel = ref<InstanceType<typeof ChatPanel> | null>(null);
@@ -269,6 +271,14 @@ onUnmounted(() => {
       >
         {{ soundMuted ? "🔇" : "🔊" }}
       </button>
+      <button
+        class="text-lg hover:scale-110 hover:opacity-80 transition-all"
+        :title="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        :aria-label="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        @click="toggleTheme"
+      >
+        {{ themeDark ? '☀️' : '🌙' }}
+      </button>
     </header>
 
     <!-- Loading Skeleton -->
@@ -279,15 +289,15 @@ onUnmounted(() => {
         </div>
       </div>
       <aside class="w-full lg:w-72 flex flex-col gap-4 animate-pulse">
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <div class="h-4 w-24 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
           <div class="h-6 w-32 rounded bg-neutral-200 dark:bg-neutral-700"></div>
         </div>
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <div class="h-16 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700 mx-auto mb-3"></div>
           <div class="h-10 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
         </div>
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <div class="h-4 w-20 rounded bg-neutral-200 dark:bg-neutral-700 mb-3"></div>
           <div class="space-y-2">
             <div class="h-8 w-full rounded-lg bg-neutral-200 dark:bg-neutral-700"></div>
@@ -341,10 +351,10 @@ onUnmounted(() => {
       <!-- HUD Panel -->
       <aside class="w-full lg:w-72 flex flex-col gap-4">
         <!-- Turn indicator -->
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wide mb-2">Current Turn</h2>
           <div v-if="store.currentPlayer" class="flex items-center gap-2">
-            <span class="text-xl">{{ colorLabels[store.currentPlayer] }}</span>
+            <span class="text-xl text-neutral-900 dark:text-neutral-100">{{ colorLabels[store.currentPlayer] }}</span>
             <span v-if="store.isMyTurn" class="text-xs font-bold text-white bg-amber-500 dark:bg-amber-600 px-2 py-0.5 rounded-full">YOUR TURN</span>
           </div>
           <p v-if="store.phase === 'rolling'" class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
@@ -359,7 +369,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Dice + Roll -->
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4 text-center">
           <div v-if="store.lastDiceRoll" :class="['text-6xl mb-3', { 'dice-roll': diceAnimating }]" aria-label="Dice result">
             {{ ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][store.lastDiceRoll] }}
           </div>
@@ -395,7 +405,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Players -->
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wide mb-3">Players</h2>
           <div class="space-y-2">
             <div
@@ -404,7 +414,7 @@ onUnmounted(() => {
               class="flex items-center justify-between p-2 rounded-lg transition-colors"
               :class="{ 'bg-amber-50 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700': store.currentPlayer === ps.color }"
             >
-              <span class="text-sm font-medium">
+              <span class="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {{ colorLabels[ps.color] }}
                 <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]?.isBot" class="text-xs">🤖</span>
                 <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]" class="text-xs text-neutral-500 dark:text-neutral-400 ml-1">
@@ -421,7 +431,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Game Log -->
-        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
+        <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4">
           <GameLog :events="store.eventLog" :bot-thinking="store.botThinking" />
         </div>
 

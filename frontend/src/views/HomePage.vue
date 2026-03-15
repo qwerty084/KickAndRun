@@ -5,6 +5,7 @@ import { useLobby } from "@/composables/useLobby";
 import { usePlayerSession, type PlayerSession } from "@/composables/usePlayerSession";
 import { apiFetch } from "@/composables/apiFetch";
 import { useAuthStore } from "@/stores/auth";
+import { useTheme } from "@/composables/useTheme";
 import TheBoard from "@/components/TheBoard.vue";
 import LobbyList from "@/components/LobbyList.vue";
 import CreateLobbyDialog from "@/components/CreateLobbyDialog.vue";
@@ -15,6 +16,7 @@ const router = useRouter();
 const { lobbies, loading, error, fetchLobbies, createLobby, joinLobby } = useLobby();
 const { loadSession, clearSession } = usePlayerSession();
 const authStore = useAuthStore();
+const { isDark: themeDark, toggle: toggleTheme } = useTheme();
 
 const showCreateDialog = ref(false);
 const showJoinDialog = ref(false);
@@ -132,6 +134,14 @@ onUnmounted(() => {
         @click="showAuthDialog = true"
       >
         Log in / Register
+      </button>
+      <button
+        class="text-lg hover:scale-110 hover:opacity-80 transition-all ml-2"
+        :title="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        :aria-label="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        @click="toggleTheme"
+      >
+        {{ themeDark ? '☀️' : '🌙' }}
       </button>
     </header>
 

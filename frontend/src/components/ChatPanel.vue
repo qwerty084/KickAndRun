@@ -75,7 +75,7 @@ defineExpose({ addMessage });
   <div class="flex flex-col bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
     <!-- Header -->
     <button
-      class="flex items-center justify-between px-4 py-2.5 bg-neutral-50 dark:bg-neutral-750 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-left"
+      class="flex items-center justify-between px-4 py-2.5 bg-neutral-50 dark:bg-neutral-700/50 hover:bg-neutral-100 dark:hover:bg-neutral-600/50 transition-colors text-left"
       @click="toggle"
     >
       <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
@@ -98,7 +98,7 @@ defineExpose({ addMessage });
       <!-- Messages -->
       <div
         ref="messagesContainer"
-        class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-sm"
+        class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-sm dark:bg-neutral-900/20"
       >
         <div v-if="loading" class="flex justify-center py-6">
           <div class="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
@@ -138,7 +138,7 @@ defineExpose({ addMessage });
 
       <!-- Input -->
       <form
-        class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-700"
+        class="px-4 py-3 border-t border-neutral-200 dark:border-neutral-700"
         @submit.prevent="handleSend"
       >
         <div class="flex gap-2">
@@ -147,7 +147,7 @@ defineExpose({ addMessage });
             type="text"
             maxlength="500"
             placeholder="Type a message..."
-            class="flex-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
+            class="flex-1 min-w-0 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
           />
           <button
             type="submit"

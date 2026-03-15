@@ -5,6 +5,7 @@ import { useGame } from "@/composables/useGame";
 import { useMercure } from "@/composables/useMercure";
 import { usePlayerSession } from "@/composables/usePlayerSession";
 import { apiFetch } from "@/composables/apiFetch";
+import { useTheme } from "@/composables/useTheme";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import ChatPanel from "@/components/ChatPanel.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -14,6 +15,7 @@ const route = useRoute();
 const router = useRouter();
 const { startGame } = useGame();
 const mercure = useMercure();
+const { isDark: themeDark, toggle: toggleTheme } = useTheme();
 const { saveSession, updateSession } = usePlayerSession();
 
 const lobbyId = route.params.id as string;
@@ -252,6 +254,14 @@ async function copyLobbyCode() {
         Back to Home
       </button>
       <ConnectionStatus :status="mercure.status.value" class="ml-auto" />
+      <button
+        class="text-lg hover:scale-110 hover:opacity-80 transition-all"
+        :title="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        :aria-label="themeDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        @click="toggleTheme"
+      >
+        {{ themeDark ? '☀️' : '🌙' }}
+      </button>
     </header>
 
     <main class="max-w-lg mx-auto px-4 pt-8">
