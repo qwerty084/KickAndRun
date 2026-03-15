@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useLobby } from "@/composables/useLobby";
 import { usePlayerSession, type PlayerSession } from "@/composables/usePlayerSession";
@@ -20,10 +20,14 @@ const showCreateDialog = ref(false);
 const showJoinDialog = ref(false);
 const showAuthDialog = ref(false);
 const activeSession = ref<PlayerSession | null>(null);
+const creating = ref(false);
+const joining = ref(false);
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(async () => {
   fetchLobbies();
   authStore.loadUser();
+  refreshInterval = setInterval(fetchLobbies, 15000);
 
   // Check for active session to show "Continue" button
   const session = loadSession();
@@ -45,7 +49,9 @@ onMounted(async () => {
 });
 
 async function handleCreate(name: string, hostName: string) {
+  creating.value = true;
   const lobby = await createLobby(name, hostName);
+  creating.value = false;
   if (lobby) {
     showCreateDialog.value = false;
     router.push({
@@ -61,7 +67,9 @@ async function handleJoinFromList() {
 }
 
 async function handleJoin(lobbyId: string, playerName: string) {
+  joining.value = true;
   const lobby = await joinLobby(lobbyId, playerName);
+  joining.value = false;
   if (lobby) {
     showJoinDialog.value = false;
     const players = lobby.players ?? [];
@@ -97,6 +105,10 @@ function dismissSession() {
   clearSession();
   activeSession.value = null;
 }
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
+});
 </script>
 
 <template>
@@ -228,8 +240,8 @@ function dismissSession() {
     </section>
 
     <!-- Dialogs -->
-    <CreateLobbyDialog v-if="showCreateDialog" @create="handleCreate" @close="showCreateDialog = false" />
-    <JoinLobbyDialog v-if="showJoinDialog" :lobbies="lobbies" @join="handleJoin" @close="showJoinDialog = false" />
+    <CreateLobbyDialog v-if="showCreateDialog" :loading="creating" @create="handleCreate" @close="showCreateDialog = false" />
+    <JoinLobbyDialog v-if="showJoinDialog" :lobbies="lobbies" :loading="joining" @join="handleJoin" @close="showJoinDialog = false" />
     <AuthDialog v-if="showAuthDialog" @close="showAuthDialog = false" />
   </div>
 </template>

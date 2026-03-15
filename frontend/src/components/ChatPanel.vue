@@ -15,9 +15,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{ "update:collapsed": [value: boolean] }>();
 
-const { messages, fetchMessages, sendMessage, addMessage } = useChat();
+const { messages, loading, error, fetchMessages, sendMessage, addMessage } = useChat();
 const inputText = ref("");
 const sending = ref(false);
+const sendError = ref<string | null>(null);
 const messagesContainer = ref<HTMLElement | null>(null);
 const isOpen = ref(!props.collapsed);
 
@@ -44,9 +45,12 @@ async function handleSend() {
   if (!text || sending.value) return;
 
   sending.value = true;
+  sendError.value = null;
   const success = await sendMessage(props.context, props.contextId, props.myPlayerId, text);
   if (success) {
     inputText.value = "";
+  } else {
+    sendError.value = error.value ?? "Failed to send message";
   }
   sending.value = false;
 }
@@ -96,7 +100,10 @@ defineExpose({ addMessage });
         ref="messagesContainer"
         class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-sm"
       >
-        <div v-if="messages.length === 0" class="text-center text-neutral-400 dark:text-neutral-500 text-xs py-6">
+        <div v-if="loading" class="flex justify-center py-6">
+          <div class="h-5 w-5 animate-spin rounded-full border-2 border-amber-300 border-t-amber-600"></div>
+        </div>
+        <div v-else-if="messages.length === 0" class="text-center text-neutral-400 dark:text-neutral-500 text-xs py-6">
           No messages yet. Say hi! 👋
         </div>
         <div
@@ -124,25 +131,35 @@ defineExpose({ addMessage });
         </div>
       </div>
 
+      <!-- Send error -->
+      <div v-if="sendError" class="px-3 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800">
+        {{ sendError }}
+      </div>
+
       <!-- Input -->
       <form
-        class="flex gap-2 px-3 py-2 border-t border-neutral-200 dark:border-neutral-700"
+        class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-700"
         @submit.prevent="handleSend"
       >
-        <input
-          v-model="inputText"
-          type="text"
-          maxlength="500"
-          placeholder="Type a message..."
-          class="flex-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
-        />
-        <button
-          type="submit"
-          :disabled="!inputText.trim() || sending"
-          class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-        >
-          Send
-        </button>
+        <div class="flex gap-2">
+          <input
+            v-model="inputText"
+            type="text"
+            maxlength="500"
+            placeholder="Type a message..."
+            class="flex-1 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none"
+          />
+          <button
+            type="submit"
+            :disabled="!inputText.trim() || sending"
+            class="rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
+            Send
+          </button>
+        </div>
+        <p class="text-[10px] text-neutral-400 dark:text-neutral-500 text-right mt-0.5">
+          {{ inputText.length }}/500
+        </p>
       </form>
     </div>
   </div>

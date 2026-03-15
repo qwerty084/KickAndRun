@@ -4,9 +4,12 @@ import { ref } from "vue";
 
 interface Props {
   lobbies: Lobby[];
+  loading?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  loading: false,
+});
 const emit = defineEmits<{ join: [lobbyId: string, playerName: string]; close: [] }>();
 
 const selectedLobby = ref<Lobby | null>(null);
@@ -108,9 +111,14 @@ function handleSubmit() {
               </button>
               <button
                 type="submit"
-                class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+                :disabled="loading"
+                class="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold py-2.5 text-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
               >
-                Join
+                <span v-if="loading" class="inline-flex items-center gap-1.5">
+                  <span class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Joining…
+                </span>
+                <span v-else>Join</span>
               </button>
             </div>
           </form>
