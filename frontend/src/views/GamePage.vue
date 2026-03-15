@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TheBoard from "@/components/TheBoard.vue";
 import GameLog from "@/components/GameLog.vue";
+import DiceCube from "@/components/DiceCube.vue";
 import ConnectionStatus from "@/components/ConnectionStatus.vue";
 import ChatPanel from "@/components/ChatPanel.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -14,7 +15,7 @@ import { apiFetch } from "@/composables/apiFetch";
 import { buildPieceMap } from "@/composables/boardLayout";
 import type { ChatMessage } from "@/composables/useChat";
 import type { PlayerColor, ValidMove } from "@/types/Game";
-import type { GameEvent } from "@/stores/game";
+
 
 const route = useRoute();
 const router = useRouter();
@@ -36,7 +37,7 @@ watch(
       diceAnimating.value = true;
       setTimeout(() => {
         diceAnimating.value = false;
-      }, 400);
+      }, 800);
     }
   },
 );
@@ -122,38 +123,7 @@ const pieceSummary = computed(() => {
   });
 });
 
-const lastActionToast = ref<string | null>(null);
-let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
-watch(
-  () => store.eventLog.length,
-  () => {
-    const events = store.eventLog;
-    if (events.length === 0) return;
-    const last = events[events.length - 1];
-    lastActionToast.value = formatToast(last);
-    if (toastTimeout) clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      lastActionToast.value = null;
-    }, 5000);
-  },
-);
-
-function formatToast(event: GameEvent): string {
-  const bot = event.isBot ? "🤖 " : "";
-  const name = `${bot}${event.playerName}`;
-  if (event.type === "dice_rolled") {
-    return `${name} rolled a ${event.diceRoll ?? "?"}`;
-  }
-  if (event.type === "piece_moved") {
-    let msg = `${name} moved piece`;
-    if (event.kicked) msg += " — kicked! 💥";
-    if (event.extraTurn) msg += " — extra turn!";
-    if (event.winner) msg = `🏆 ${event.playerName} wins!`;
-    return msg;
-  }
-  return `${name} — ${event.type}`;
-}
 
 async function requestRematch() {
   if (!store.lobbyId || !store.myPlayerId) return;
@@ -318,16 +288,6 @@ onUnmounted(() => {
       <!-- Board column -->
       <div class="flex-1 min-w-0" role="status" aria-live="polite">
         <div class="relative bg-amber-200 dark:bg-amber-700 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
-          <!-- Action toast (absolute overlay, no layout shift) -->
-          <Transition name="toast">
-            <div
-              v-if="lastActionToast"
-              class="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-max max-w-[90%] text-center text-sm font-medium py-1.5 px-4 rounded-lg bg-white/90 dark:bg-neutral-800/90 shadow-lg border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm"
-            >
-              {{ lastActionToast }}
-            </div>
-          </Transition>
-
           <!-- Bot thinking banner (absolute overlay) -->
           <div
             v-if="store.botThinking"
@@ -370,10 +330,9 @@ onUnmounted(() => {
 
         <!-- Dice + Roll -->
         <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md dark:shadow-black/30 border border-neutral-200 dark:border-neutral-600/70 p-4 text-center">
-          <div v-if="store.lastDiceRoll" :class="['text-6xl mb-3', { 'dice-roll': diceAnimating }]" aria-label="Dice result">
-            {{ ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][store.lastDiceRoll] }}
+          <div class="mb-3 flex justify-center">
+            <DiceCube :value="store.lastDiceRoll" :rolling="diceAnimating" />
           </div>
-          <div v-else class="text-6xl mb-3 text-neutral-300 dark:text-neutral-600">🎲</div>
 
           <button
             :disabled="!store.isMyTurn || store.phase !== 'rolling' || store.isLoading"
@@ -495,18 +454,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.toast-enter-active {
-  transition: all 0.3s ease-out;
-}
-.toast-leave-active {
-  transition: all 0.3s ease-in;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
 .fade-enter-active {
   transition: opacity 0.3s ease-out;
 }
@@ -518,28 +465,5 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.dice-roll {
-  animation: dice-shake 0.4s ease-out;
-}
 
-@keyframes dice-shake {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  20% {
-    transform: rotate(-15deg) scale(1.1);
-  }
-  40% {
-    transform: rotate(15deg) scale(1.1);
-  }
-  60% {
-    transform: rotate(-8deg) scale(1.05);
-  }
-  80% {
-    transform: rotate(5deg) scale(1.02);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-}
 </style>
