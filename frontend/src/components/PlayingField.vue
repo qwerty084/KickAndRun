@@ -78,7 +78,8 @@ const emit = defineEmits<{
   }
 
   &.black {
-    @apply bg-black;
+    @apply bg-neutral-700;
+    border-color: #9ca3af; /* neutral-400 — visible on dark board */
   }
 
   &.red {
@@ -118,7 +119,7 @@ const emit = defineEmits<{
   }
 
   &.piece-black {
-    @apply bg-neutral-950 border-neutral-400;
+    @apply bg-neutral-800 border-neutral-300;
   }
 }
 

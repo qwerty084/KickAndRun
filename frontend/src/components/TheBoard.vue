@@ -91,7 +91,7 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
     />
 
     <!-- Top arm (Green arm) -->
-    <div class="flex justify-between w-[85%] relative">
+    <div class="flex justify-between w-3/4 relative">
       <!-- Left column: departure (path:2-5) -->
       <div class="row-path">
         <PlayingField field-color="white" position="path:2" :piece="getPiece('path:2')" :highlighted="isHighlighted('path:2')" :selected="isSelected('path:2')" @field-click="handleClick" />
@@ -127,7 +127,7 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
     />
 
     <!-- Left arm (Yellow arm, rotated -90°) -->
-    <div class="flex justify-between w-[85%] -rotate-90 relative">
+    <div class="flex justify-between w-3/4 -rotate-90 relative">
       <div class="row-path">
         <PlayingField field-color="white" position="path:12" :piece="getPiece('path:12')" :highlighted="isHighlighted('path:12')" :selected="isSelected('path:12')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:13" :piece="getPiece('path:13')" :highlighted="isHighlighted('path:13')" :selected="isSelected('path:13')" @field-click="handleClick" />
@@ -150,7 +150,7 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
     </div>
 
     <!-- Center cross -->
-    <div class="flex flex-col w-[85%] justify-around">
+    <div class="flex flex-col w-3/4 justify-around">
       <div class="flex justify-between">
         <div><PlayingField field-color="white" position="path:6" :piece="getPiece('path:6')" :highlighted="isHighlighted('path:6')" :selected="isSelected('path:6')" @field-click="handleClick" /></div>
         <div><PlayingField field-color="green" position="goal:green:3" :piece="getPiece('goal:green:3')" :highlighted="isHighlighted('goal:green:3')" @field-click="handleClick" /></div>
@@ -168,7 +168,7 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
     </div>
 
     <!-- Right arm (Red arm, rotated 90°) -->
-    <div class="flex justify-between w-[85%] rotate-90">
+    <div class="flex justify-between w-3/4 rotate-90">
       <div class="row-path">
         <PlayingField field-color="white" position="path:22" :piece="getPiece('path:22')" :highlighted="isHighlighted('path:22')" :selected="isSelected('path:22')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:23" :piece="getPiece('path:23')" :highlighted="isHighlighted('path:23')" :selected="isSelected('path:23')" @field-click="handleClick" />
@@ -200,7 +200,7 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
     />
 
     <!-- Bottom arm (Black arm, rotated 180°) -->
-    <div class="flex justify-between w-[85%] rotate-180">
+    <div class="flex justify-between w-3/4 rotate-180">
       <div class="row-path">
         <PlayingField field-color="white" position="path:32" :piece="getPiece('path:32')" :highlighted="isHighlighted('path:32')" :selected="isSelected('path:32')" @field-click="handleClick" />
         <PlayingField field-color="white" position="path:33" :piece="getPiece('path:33')" :highlighted="isHighlighted('path:33')" :selected="isSelected('path:33')" @field-click="handleClick" />
@@ -238,6 +238,6 @@ function getBasePieces(color: PlayerColor): (PlayerColor | null)[] {
 @reference "tailwindcss";
 
 .row-path {
-  @apply flex flex-col gap-4;
+  @apply flex flex-col gap-[5px];
 }
 </style>

@@ -274,7 +274,7 @@ onUnmounted(() => {
     <!-- Loading Skeleton -->
     <div v-if="store.isLoading && !store.gameState" class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
       <div class="flex-1 min-w-0">
-        <div class="bg-amber-200/50 dark:bg-amber-900/50 p-2 rounded border-[3px] border-red-600/30 mx-auto animate-pulse" style="max-width: 700px">
+        <div class="bg-amber-200/50 dark:bg-amber-700/50 p-2 rounded border-[3px] border-red-600/30 mx-auto animate-pulse" style="max-width: 700px">
           <div class="p-4 border-2 border-black/10 dark:border-neutral-300/10 rounded-sm aspect-square"></div>
         </div>
       </div>
@@ -307,7 +307,7 @@ onUnmounted(() => {
     <main v-else class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
       <!-- Board column -->
       <div class="flex-1 min-w-0" role="status" aria-live="polite">
-        <div class="relative bg-amber-200 dark:bg-amber-900 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
+        <div class="relative bg-amber-200 dark:bg-amber-700 p-2 rounded border-[3px] border-red-600 mx-auto max-w-[700px]">
           <!-- Action toast (absolute overlay, no layout shift) -->
           <Transition name="toast">
             <div
@@ -342,18 +342,18 @@ onUnmounted(() => {
       <aside class="w-full lg:w-72 flex flex-col gap-4">
         <!-- Turn indicator -->
         <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
-          <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">Current Turn</h2>
+          <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wide mb-2">Current Turn</h2>
           <div v-if="store.currentPlayer" class="flex items-center gap-2">
             <span class="text-xl">{{ colorLabels[store.currentPlayer] }}</span>
-            <span v-if="store.isMyTurn" class="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">YOUR TURN</span>
+            <span v-if="store.isMyTurn" class="text-xs font-bold text-white bg-amber-500 dark:bg-amber-600 px-2 py-0.5 rounded-full">YOUR TURN</span>
           </div>
-          <p v-if="store.phase === 'rolling'" class="text-xs text-neutral-500 mt-1">
+          <p v-if="store.phase === 'rolling'" class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             Waiting to roll…
             <template v-if="(store.gameState?.rollAttemptsLeft ?? 0) > 0">
               ({{ store.gameState!.rollAttemptsLeft }} {{ store.gameState!.rollAttemptsLeft === 1 ? "attempt" : "attempts" }} left)
             </template>
           </p>
-          <p v-else-if="store.phase === 'moving'" class="text-xs text-neutral-500 mt-1">
+          <p v-else-if="store.phase === 'moving'" class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             Choose a piece to move
           </p>
         </div>
@@ -375,7 +375,7 @@ onUnmounted(() => {
 
           <!-- Valid moves summary -->
           <div v-if="store.validMoves.length > 0 && store.isMyTurn" class="mt-3 text-left">
-            <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">Valid moves ({{ store.validMoves.length }}):</p>
+            <p class="text-xs font-medium text-neutral-500 dark:text-neutral-300 mb-1">Valid moves ({{ store.validMoves.length }}):</p>
             <ul class="space-y-1">
               <li
                 v-for="mv in store.validMoves"
@@ -389,14 +389,14 @@ onUnmounted(() => {
             </ul>
           </div>
 
-          <div v-if="store.validMoves.length === 0 && store.phase === 'moving' && store.isMyTurn" class="mt-3 text-xs text-neutral-500">
+          <div v-if="store.validMoves.length === 0 && store.phase === 'moving' && store.isMyTurn" class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
             No valid moves — turn passes
           </div>
         </div>
 
         <!-- Players -->
         <div class="rounded-xl bg-white dark:bg-neutral-800 shadow-md border border-neutral-200 dark:border-neutral-700 p-4">
-          <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">Players</h2>
+          <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wide mb-3">Players</h2>
           <div class="space-y-2">
             <div
               v-for="ps in pieceSummary"
@@ -407,11 +407,11 @@ onUnmounted(() => {
               <span class="text-sm font-medium">
                 {{ colorLabels[ps.color] }}
                 <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]?.isBot" class="text-xs">🤖</span>
-                <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]" class="text-xs text-neutral-500 ml-1">
+                <span v-if="store.players[store.gameState?.players.indexOf(ps.color) ?? -1]" class="text-xs text-neutral-500 dark:text-neutral-400 ml-1">
                   {{ store.players[store.gameState?.players.indexOf(ps.color) ?? -1]?.name }}
                 </span>
               </span>
-              <div class="flex gap-2 text-xs text-neutral-500">
+              <div class="flex gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                 <span title="In base" :aria-label="ps.inBase + ' pieces in base'">🏠{{ ps.inBase }}</span>
                 <span title="On path" :aria-label="ps.onPath + ' pieces on path'">🛤️{{ ps.onPath }}</span>
                 <span title="In goal" :aria-label="ps.inGoal + ' pieces in goal'">🏁{{ ps.inGoal }}</span>

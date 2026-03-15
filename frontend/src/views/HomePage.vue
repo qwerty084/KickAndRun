@@ -253,8 +253,8 @@ onUnmounted(() => {
  * board absolutely inside with transform-origin: top left.
  */
 .board-wrapper {
-  --board-size: 500px;
-  --board-scale: 0.55;
+  --board-size: 700px;
+  --board-scale: 0.4;
   width: calc(var(--board-size) * var(--board-scale));
   height: calc(var(--board-size) * var(--board-scale));
   flex-shrink: 0;
@@ -269,13 +269,13 @@ onUnmounted(() => {
 
 @media (min-width: 640px) {
   .board-wrapper {
-    --board-scale: 0.65;
+    --board-scale: 0.47;
   }
 }
 
 @media (min-width: 1024px) {
   .board-wrapper {
-    --board-scale: 0.6;
+    --board-scale: 0.43;
   }
 }
 </style>
