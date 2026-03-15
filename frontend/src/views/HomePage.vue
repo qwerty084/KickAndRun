@@ -183,6 +183,7 @@ onUnmounted(() => {
                 class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 text-xs hover:scale-110 transition-transform"
                 @click="dismissSession"
                 title="Dismiss"
+                aria-label="Dismiss session"
               >
                 ✕
               </button>

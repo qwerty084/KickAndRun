@@ -223,6 +223,7 @@ onUnmounted(() => {
       <button
         class="text-lg hover:scale-110 hover:opacity-80 transition-all"
         :title="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
+        :aria-label="soundMuted ? 'Unmute sounds' : 'Mute sounds'"
         @click="toggleMute"
       >
         {{ soundMuted ? "🔇" : "🔊" }}
@@ -264,7 +265,7 @@ onUnmounted(() => {
     <!-- Game layout -->
     <main v-else class="flex flex-col lg:flex-row gap-4 px-4 pb-8 max-w-[1200px] mx-auto">
       <!-- Board column -->
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0" role="status" aria-live="polite">
         <!-- Action toast -->
         <Transition name="toast">
           <div
@@ -370,9 +371,9 @@ onUnmounted(() => {
                 </span>
               </span>
               <div class="flex gap-2 text-xs text-neutral-500">
-                <span title="In base">🏠{{ ps.inBase }}</span>
-                <span title="On path">🛤️{{ ps.onPath }}</span>
-                <span title="In goal">🏁{{ ps.inGoal }}</span>
+                <span title="In base" :aria-label="ps.inBase + ' pieces in base'">🏠{{ ps.inBase }}</span>
+                <span title="On path" :aria-label="ps.onPath + ' pieces on path'">🛤️{{ ps.onPath }}</span>
+                <span title="In goal" :aria-label="ps.inGoal + ' pieces in goal'">🏁{{ ps.inGoal }}</span>
               </div>
             </div>
           </div>
